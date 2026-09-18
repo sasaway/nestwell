@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#EDF0EC">
+<title>자취루틴</title>
+<style>
+/* ============================================================
+   tokens.css — 색 / 간격 / 글꼴
+   ============================================================ */
+:root{
+  --bg:#EDF0EC;
+  --card:#FFFFFF;
+  --ink:#16221C;
+  --ink-2:#5E6B64;
+  --ink-3:#95A09A;
+  --line:#DCE2DD;
+  --line-soft:#EAEEE9;
+
+  --meal:#B08307;      /* 식단 - 머스타드 */
+  --meal-bg:#FBF3DC;
+  --work:#0E6B4F;      /* 운동 - 딥그린 */
+  --work-bg:#DFEDE7;
+  --money:#2B5D8A;     /* 돈 - 딥블루 */
+  --money-bg:#E0EAF2;
+  --warn:#9A3B20;
+  --warn-bg:#F8E7E1;
+  --hobby:#6B4FA0;      /* 취미 - 바이올렛 */
+  --hobby-bg:#ECE6F5;
+  --job:#8A5A2B;         /* 알바 근무 - 브라운 */
+  --job-bg:#F1E6D8;
+
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --pad:16px;
+  --tab-h:66px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Pretendard","Apple SD Gothic Neo",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+button{border:none;background:none;padding:0;cursor:pointer}
+input{background:none}
+
+/* ============================================================
+   base + shell
+   ============================================================ */
+#app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header.top{
+  position:sticky;top:0;z-index:20;background:var(--bg);
+  padding:calc(env(safe-area-inset-top) + 14px) var(--pad) 10px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
+  border-bottom:1px solid transparent;transition:border-color .2s;
+}
+header.top.scrolled{border-color:var(--line)}
+.top-title{font-size:26px;font-weight:800;letter-spacing:-.6px;line-height:1.1}
+.top-sub{font-size:13px;color:var(--ink-2);margin-top:3px}
+.dots{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:20px;color:var(--ink-2);background:#fff}
+
+main{flex:1;padding:6px var(--pad) calc(var(--tab-h) + env(safe-area-inset-bottom) + 24px)}
+
+/* 하단 탭 */
+nav.tabs{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  max-width:520px;margin:0 auto;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+nav.tabs button{height:var(--tab-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-3);font-size:11.5px;font-weight:600}
+nav.tabs button .ic{font-size:21px;line-height:1}
+nav.tabs button[aria-current="true"]{color:var(--ink)}
+nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
+
+/* 세그먼트(탭 내부) */
+.seg{display:flex;gap:4px;background:#E2E7E2;padding:4px;border-radius:12px;margin:2px 0 16px}
+.seg button{flex:1;padding:9px 4px;border-radius:9px;font-size:14px;font-weight:600;color:var(--ink-2)}
+.seg button[aria-current="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* 카드 */
+.card{background:var(--card);border-radius:var(--r-lg);padding:18px;margin-bottom:12px}
+.card.flat{padding:14px 16px;border-radius:var(--r-md)}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.card-label{font-size:13px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.big{font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1.05}
+.big.sm{font-size:26px}
+.unit{font-size:15px;font-weight:700;color:var(--ink-2);margin-left:2px}
+.muted{color:var(--ink-2);font-size:14px}
+.tiny{font-size:12.5px;color:var(--ink-3)}
+
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.chip.meal{background:var(--meal-bg);color:var(--meal)}
+.chip.work{background:var(--work-bg);color:var(--work)}
+.chip.money{background:var(--money-bg);color:var(--money)}
+.chip.off{background:#EDEFEC;color:var(--ink-3)}
+.chip.job{background:var(--job-bg);color:var(--job)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;border-radius:12px;font-weight:700;font-size:14.5px}
+.btn.full{width:100%}
+.btn.meal{background:var(--meal);color:#fff}
+.btn.work{background:var(--work);color:#fff}
+.btn.money{background:var(--money);color:#fff}
+.btn.ghost{background:#EFF2EE;color:var(--ink)}
+.btn.line{border:1px solid var(--line);background:#fff;color:var(--ink-2);font-weight:600}
+.btn:active{transform:scale(.985)}
+
+/* 진행바 */
+.bar{height:8px;border-radius:99px;background:#E6EAE6;overflow:hidden}
+.bar > i{display:block;height:100%;border-radius:99px;background:var(--work);transition:width .3s ease}
+
+/* 체크 행 */
+.row{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line-soft)}
+.row:last-child{border-bottom:none}
+.tick{width:26px;height:26px;border-radius:9px;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:14px;color:transparent;background:#fff}
+.row.on .tick{background:var(--work);border-color:var(--work);color:#fff}
+.row.on .r-name{color:var(--ink-3);text-decoration:line-through}
+.r-name{font-weight:650;font-size:15px}
+.r-meta{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+
+/* 오늘 스케줄 타임라인 */
+.sched .srow{display:flex;gap:10px;align-items:flex-start;padding:8px 2px;border-bottom:1px solid var(--line-soft)}
+.sched .srow:last-child{border-bottom:none}
+.sched .stime{width:72px;flex:none;font-size:12px;font-weight:700;color:var(--ink-3);padding-top:2px;font-variant-numeric:tabular-nums}
+.sched .sdot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none}
+.sched .slabel{font-size:14px;font-weight:600}
+.sched .srow.now{background:var(--work-bg);border-radius:10px;margin:0 -6px;padding:8px 6px}
+.sched .srow.now .slabel{color:var(--work);font-weight:800}
+.sched .srow.now .stime{color:var(--work)}
+
+/* 입력 */
+.inp{width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;font-size:15px}
+.inp:focus{outline:2px solid var(--money);outline-offset:-1px;border-color:transparent}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:650}
+
+/* 시트 / 모달 */
+.scrim{position:fixed;inset:0;background:rgba(14,22,18,.45);z-index:40;display:none}
+.scrim.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:#fff;
+  border-radius:22px 22px 0 0;padding:20px var(--pad) calc(env(safe-area-inset-bottom) + 20px);
+  transform:translateY(102%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:85vh;overflow:auto}
+.sheet.on{transform:translateY(0)}
+.sheet h3{margin:0 0 14px;font-size:19px;font-weight:800;letter-spacing:-.4px}
+.sheet .grab{width:38px;height:4px;border-radius:9px;background:var(--line);margin:-6px auto 14px}
+.opt{display:flex;align-items:center;justify-content:space-between;width:100%;padding:15px 14px;border-radius:12px;background:#F5F7F4;margin-bottom:8px;font-weight:650;text-align:left}
+.opt[aria-current="true"]{background:var(--work-bg);color:var(--work)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.pop{animation:pop .22s ease}
+@keyframes pop{from{transform:scale(.97);opacity:.4}to{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top" id="top">
+    <div>
+      <div class="top-title" id="topTitle">자취루틴</div>
+      <div class="top-sub" id="topSub"></div>
+    </div>
+    <button class="chip off" id="syncBadge" hidden></button>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs" id="tabs">
+    <button data-tab="home"><span class="ic">🏠</span>홈</button>
+    <button data-tab="meal"><span class="ic">🍚</span>식단</button>
+    <button data-tab="work"><span class="ic">🏋️</span>운동</button>
+    <button data-tab="money"><span class="ic">💰</span>돈</button>
+  </nav>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"></div>
+<script src="sync.js"></script>
+
+<script>
+/* ============================================================
+   shared/storage.js — localStorage 캐시 + GitHub(sasaway/life) 동기화 (sync.js)
+   ============================================================ */
+const SYNC_CFG = 'lifesync:config';
+const storage = (() => {
+  try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return localStorage; }
+  catch (e) { const m = new Map(); return { getItem: k => m.has(k) ? m.get(k) : null, setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; }
+})();
+const syncCfg = (() => { try { return JSON.parse(storage.getItem(SYNC_CFG)); } catch (e) { return null; } })();
+const store = LifeSync.createStore({
+  api: syncCfg ? LifeSync.githubApi({ token: syncCfg.token, repo: syncCfg.repo }) : null,
+  storage,
+  device: syncCfg ? syncCfg.device : '로컬',
+  onRemoteChange: () => { loadAll().then(render); },
+});
+const DB = {
+  async get(key){ return store.get(key); },
+  async set(key,val){ store.set(key,val); },
+  async del(key){ storage.removeItem('lifesync:cache:'+key); }   // v6 에서 부르는 곳 없음
+};
+const K = {
+  settings:'living-routine:v1:settings',
+  meals: ym => `living-routine:v1:meals:${ym}`,
+  work:  ym => `living-routine:v1:workouts:${ym}`,
+  money: ym => `living-routine:v1:budget:${ym}`,
+  review: ym => `living-routine:v1:review:${ym}`
+};
+
+/* ============================================================
+   shared/formatters.js
+   ============================================================ */
+const won = n => (Number(n)||0).toLocaleString('ko-KR');
+const pad2 = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const ymOf = s => s.slice(0,7);
+const DOW = ['일','월','화','수','목','금','토'];
+const TODAY = ymd(new Date());
+const fmtDate = s => { const d = new Date(s+'T00:00:00'); return `${d.getMonth()+1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일`; };
+const dowOf = s => new Date(s+'T00:00:00').getDay();
+const uid = p => p+'-'+Math.random().toString(36).slice(2,8);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nowHM = () => { const d=new Date(); return pad2(d.getHours())+':'+pad2(d.getMinutes()); };
+
+/* ============================================================
+   app/schedule.js — 격주 오픈/마감 시프트 엔진
+   기준: 2026-09-14(월) = 오픈반 시작 주. 2주 주기로 오픈↔마감 반복.
+   오픈반 주 휴무 = 수요일 / 마감반 주 휴무 = 일요일 (은월 확인 완료)
+   운동은 매일 하되 강도가 요일마다 다르다(PLANS 참고) — 그래서 시간표는
+   '몇 시에 운동하는지'만 정하고, '무엇을 얼마나'는 PLANS가 정한다.
+   슬롯은 오픈반 16:15 / 마감반 12:00으로 고정.
+   ============================================================ */
+const SCHEDULE_ANCHOR = '2026-09-14';
+const OFF_DOW = { open:3, close:0 };
+const WORK_HOURS = { open:{start:'08:30',end:'15:30'}, close:{start:'15:00',end:'22:00'} };
+const WORKOUT_SLOT = { open:{start:'16:00',end:'18:00'}, close:{start:'11:00',end:'13:00'} };
+const SHOWER_SLOT = { open:{start:'18:00',end:'18:30'}, close:{start:'13:00',end:'13:30'} };
+const CAT_COLOR = { sleep:'var(--ink-3)', meal:'var(--meal)', hobby:'var(--hobby)', work:'var(--job)', workout:'var(--work)', chore:'var(--ink-2)', free:'var(--ink-3)', care:'var(--money)' };
+
+const SCHEDULE_TEMPLATES = {
+  /* 오픈반 · 근무일 (수요일 제외) — 운동 16:00 출발~18:00 귀가(2시간), 샤워 30분, 취미 2시간 */
+  'open|work': [
+    ['07:00','07:20','기상 · 세면','sleep'],
+    ['07:20','07:35','아침 (간단)','meal'],
+    ['07:35','08:30','자유시간','free'],
+    ['08:30','15:30','알바 · 오픈반','work'],
+    ['15:30','16:00','귀가 · 휴식','free'],
+    ['16:00','18:00','운동 (왕복 포함)','workout'],
+    ['18:00','18:30','샤워','care'],
+    ['18:30','19:15','저녁','meal'],
+    ['19:15','19:45','가사','chore'],
+    ['19:45','21:45','취미','hobby'],
+    ['21:45','22:30','자유시간','free'],
+    ['22:30','23:30','스킨케어 · 준비','care'],
+    ['23:30','24:00','마무리','free']
+  ],
+  /* 오픈반 · 휴무 (수) — 운동 시각은 근무일과 동일하게 유지 */
+  'open|off': [
+    ['07:00','07:20','기상 · 세면','sleep'],
+    ['07:20','07:35','아침 (간단)','meal'],
+    ['07:35','11:30','자유시간','free'],
+    ['11:30','12:00','가사','chore'],
+    ['12:00','16:00','자유시간','free'],
+    ['16:00','18:00','운동 (왕복 포함)','workout'],
+    ['18:00','18:30','샤워','care'],
+    ['18:30','19:15','저녁','meal'],
+    ['19:15','21:15','취미','hobby'],
+    ['21:15','22:30','자유시간','free'],
+    ['22:30','23:30','스킨케어 · 준비','care'],
+    ['23:30','24:00','마무리','free']
+  ],
+  /* 마감반 · 근무일 (일요일 제외) — 운동 11:00 출발~13:00 귀가(2시간), 샤워 30분, 취미 2시간 */
+  'close|work': [
+    ['07:00','07:20','기상 · 세면','sleep'],
+    ['07:20','07:35','아침 (간단)','meal'],
+    ['07:35','09:35','취미','hobby'],
+    ['09:35','11:00','자유시간','free'],
+    ['11:00','13:00','운동 (왕복 포함)','workout'],
+    ['13:00','13:30','샤워','care'],
+    ['13:30','14:10','점심','meal'],
+    ['14:10','14:40','자유시간','free'],
+    ['15:00','22:00','알바 · 마감반','work'],
+    ['22:00','22:30','귀가','free'],
+    ['22:30','23:00','가사','chore'],
+    ['23:00','23:30','스킨케어 · 준비','care'],
+    ['23:30','24:00','마무리','free']
+  ],
+  /* 마감반 · 휴무 (일) — 운동 시각은 근무일과 동일하게 유지 */
+  'close|off': [
+    ['07:00','07:20','기상 · 세면','sleep'],
+    ['07:20','07:35','아침 (간단)','meal'],
+    ['07:35','09:35','취미','hobby'],
+    ['09:35','11:00','자유시간','free'],
+    ['11:00','13:00','운동 (왕복 포함)','workout'],
+    ['13:00','13:30','샤워','care'],
+    ['13:30','14:10','점심','meal'],
+    ['14:10','18:00','자유시간','free'],
+    ['18:00','18:45','저녁','meal'],
+    ['18:45','19:15','가사','chore'],
+    ['19:15','22:30','자유시간','free'],
+    ['22:30','23:30','스킨케어 · 준비','care'],
+    ['23:30','24:00','마무리','free']
+  ]
+};
+
+const Schedule = {
+  weekIndex(date){
+    const a = new Date(SCHEDULE_ANCHOR+'T00:00:00');
+    const d = new Date(date+'T00:00:00');
+    return Math.floor(Math.round((d-a)/86400000)/7);
+  },
+  shiftOf(date){ const i=this.weekIndex(date); return (((i%2)+2)%2===0) ? 'open' : 'close'; },
+  shiftLabel(s){ return s==='open' ? '오픈반' : '마감반'; },
+  isOffDay(date){ return dowOf(date) === OFF_DOW[this.shiftOf(date)]; },
+  workHours(date){ return this.isOffDay(date) ? null : WORK_HOURS[this.shiftOf(date)]; },
+  workoutSlot(date){ return WORKOUT_SLOT[this.shiftOf(date)]; },
+  showerSlot(date){ return SHOWER_SLOT[this.shiftOf(date)]; },
+  mealsToday(date){
+    if(this.isOffDay(date)) return ['breakfast','lunch','dinner'];
+    return this.shiftOf(date)==='open' ? ['breakfast','dinner'] : ['breakfast','lunch'];
+  },
+  templateKey(date){ return `${this.shiftOf(date)}|${this.isOffDay(date)?'off':'work'}`; },
+  blocksFor(date){ return SCHEDULE_TEMPLATES[this.templateKey(date)] || SCHEDULE_TEMPLATES['open|work']; }
+};
+
+/* ============================================================
+   features/workout/recovery-data.js — 일요일 액티브 리커버리 메뉴
+   PLANS의 요일별 split에서 일요일(0) 항목으로 그대로 쓰인다.
+   id를 'rest-'로 시작해 다른 요일 종목 id와 절대 겹치지 않게 한다.
+   ============================================================ */
+const REST_ITEMS = [
+  {id:'rest-walk', name:'빠르게 걷기(산책)', meta:'20분 · 대화 가능한 속도'},
+  {id:'rest-ham',  name:'햄스트링 스트레칭', meta:'양쪽 각 30초 × 2세트'},
+  {id:'rest-calf', name:'종아리 스트레칭',   meta:'양쪽 각 30초 × 2세트'},
+  {id:'rest-chest',name:'가슴·어깨 열기 스트레칭', meta:'30초 × 2세트'},
+  {id:'rest-hip',  name:'고관절 스트레칭',   meta:'양쪽 각 30초'},
+  {id:'rest-waist',name:'허리 회전 스트레칭', meta:'양쪽 각 30초'}
+];
+
+/* ============================================================
+   features/meals/data.js
+   ============================================================ */
+const MENUS = [
+  { id:'egg-ramyeon', name:'계란라면', emoji:'🍜', kcal:560, protein:19, cost:1600, min:10,
+    tag:'간단',
+    items:['라면 1개','계란 2개','냉동 대파 한 줌'],
+    steps:[
+      {t:'물 올리기', d:'냄비에 물 500ml를 붓고 센 불에 올린다. 물이 끓는 동안 계란을 그릇에 미리 깨둔다.', sec:180},
+      {t:'면·스프 넣기', d:'끓으면 면과 스프를 넣고 3분간 끓인다.', sec:180},
+      {t:'계란·대파', d:'계란 2개를 깨 넣고 젓지 않은 채 40초 둔 뒤 냉동 대파를 뿌리고 불을 끈다.', sec:40}
+    ],
+    tip:'계란 2개면 단백질이 라면 단독 대비 약 12g 늘어난다. 국물은 절반만 마시면 나트륨 부담이 확 줄어든다.' },
+
+  { id:'jjagle-new', name:'대패짜글이', emoji:'🍲', kcal:720, protein:34, cost:3200, min:18,
+    tag:'1.5배 조리', batch:true,
+    items:['대패삼겹살 200g','냉동 대파 한 줌','고추장 1큰술','고춧가루 1큰술','간장 1큰술','다진 마늘 1작은술','물 300ml','햇반 1개'],
+    steps:[
+      {t:'고기 볶기', d:'달군 냄비에 대패삼겹살을 넣고 겉면이 익을 때까지 볶는다. 기름은 한 큰술만 남기고 따라낸다.', sec:240},
+      {t:'양념 볶기', d:'고추장·고춧가루·간장·다진 마늘을 넣고 30초 더 볶아 양념의 날 맛을 없앤다.', sec:40},
+      {t:'끓이기', d:'물 300ml를 붓고 국물이 자작해질 때까지 중불로 끓인다.', sec:480},
+      {t:'대파·마무리', d:'냉동 대파를 넣고 1분 더 끓인 뒤 절반은 바로 먹고 절반은 통에 담아 식힌다.', sec:60}
+    ],
+    tip:'항상 1.5~2배로 만든다. 남긴 절반이 다음 끼니가 되므로 요리 횟수가 주 2회 줄어든다.' },
+
+  { id:'jjagle-left', name:'대패짜글이 (남은 것)', emoji:'♻️', kcal:690, protein:33, cost:900, min:6,
+    tag:'남은 음식', leftover:true,
+    items:['어제 만든 짜글이','햇반 1개','계란 1개(선택)'],
+    steps:[
+      {t:'데우기', d:'냄비에 옮겨 담고 물 2~3큰술을 더해 중불로 데운다.', sec:240},
+      {t:'햇반', d:'햇반을 전자레인지에 2분 돌린다.', sec:120},
+      {t:'계란 얹기', d:'남은 국물에 계란 1개를 깨 넣고 반숙으로 익힌다.', sec:90}
+    ],
+    tip:'다시 데울 때 계란 하나만 추가해도 단백질이 6g 늘고 설거지는 그대로다.' },
+
+  { id:'egg-fried-rice', name:'계란볶음밥', emoji:'🍳', kcal:640, protein:22, cost:2000, min:12,
+    tag:'한 팬',
+    items:['햇반 1개','계란 3개','냉동 대파 한 줌','간장 1큰술','참기름 약간'],
+    steps:[
+      {t:'햇반 데우기', d:'햇반을 전자레인지에 2분 돌려 밥알을 풀어둔다.', sec:120},
+      {t:'대파 기름', d:'팬에 기름을 두르고 냉동 대파를 넣어 향을 낸다.', sec:90},
+      {t:'계란·밥', d:'계란 3개를 넣고 반쯤 익으면 밥을 넣어 함께 볶는다.', sec:180},
+      {t:'간 맞추기', d:'팬 가장자리에 간장을 둘러 넣고 30초 볶은 뒤 불을 끄고 참기름을 두른다.', sec:40}
+    ],
+    tip:'계란 3개로 단백질 약 19g. 대파를 먼저 기름에 볶으면 냉동이어도 향이 살아난다.' },
+
+  { id:'chicken-rice', name:'닭가슴살 + 햇반', emoji:'🍗', kcal:520, protein:41, cost:3000, min:7,
+    tag:'최소 조리',
+    items:['닭가슴살 1팩(100g)','햇반 1개','계란 1개','냉동 대파 한 줌'],
+    steps:[
+      {t:'같이 데우기', d:'닭가슴살과 햇반을 전자레인지에 함께 2분 돌린다.', sec:120},
+      {t:'계란 프라이', d:'팬에 계란을 부치고 냉동 대파를 올린다.', sec:150},
+      {t:'담기', d:'밥 위에 닭가슴살을 찢어 올리고 계란을 얹는다.', sec:0}
+    ],
+    tip:'운동한 날 저녁에 배치하면 좋다. 단백질 41g으로 하루 목표의 3분의 1을 한 끼에 채운다.' }
+];
+const menuById = id => MENUS.find(m=>m.id===id) || MENUS[0];
+const MEAL_EPOCH = new Date('2026-09-01T00:00:00');
+const BREAKFAST_PROTEIN = 15; // 간단 아침(계란 2개+우유 등) 가정치
+
+/* ============================================================
+   features/workout/data.js — 헬스일은 항상 월·수·금(Schedule 기준)
+   ============================================================ */
+const INTENSITY_LABEL = { high:'고강도', moderate:'보통', light:'가벼움' };
+const INTENSITY_COLOR = { high:'var(--work)', moderate:'var(--meal)', light:'var(--ink-3)' };
+
+const PLANS = {
+  'gym-7':{
+    id:'gym-7', label:'헬스장 · 매일', dayLabel:'매일 (요일별 강도 다름)',
+    why:'매일 운동하되 강도를 요일별로 다르게 짰다. 가슴·등·하체는 주 1회씩 고강도로, 어깨·하체는 주 중간에 보통 강도로 한 번 더 걸어 회복 시간을 확보했다. 팔(이두·삼두·전완)은 월·화·목·금 네 번 걸리게 배치해 비중을 높였고, 일요일은 무게 없이 걷기+스트레칭만 하는 액티브 리커버리로 뒀다 — 매일 고강도로 밀어붙이면 회복이 못 따라가 오히려 근성장이 막히기 때문이다.',
+    warmup:[
+      {id:'w1',name:'팔 벌려 뛰기',meta:'2분'},
+      {id:'w2',name:'어깨 돌리기',meta:'앞뒤 각 15회'},
+      {id:'w3',name:'빈 몸 스쿼트',meta:'15회'},
+      {id:'w4',name:'손목 돌리기',meta:'양쪽 15회'}
+    ],
+    cardio:[{id:'c1',name:'유산소',meta:'트레드밀 또는 사이클 10~15분 · 대화 가능한 강도'}],
+    cooldown:[
+      {id:'s1',name:'가슴·어깨 열기 스트레칭',meta:'30초 × 2'},
+      {id:'s2',name:'삼두 뒤로 당기기',meta:'양팔 각 30초'},
+      {id:'s3',name:'허벅지 뒤(햄스트링) 스트레칭',meta:'양쪽 각 30초'}
+    ],
+    split:{
+      1:{label:'월 · 가슴 + 삼두', intensity:'high', ex:[
+        {id:'m1',name:'체스트프레스',meta:'4세트 × 10회 · 휴식 90초',part:'가슴',cue:'손잡이는 명치 높이. 내릴 때 3초, 밀 때 1초.'},
+        {id:'m2',name:'펙덱플라이',meta:'3세트 × 12회 · 휴식 60초',part:'가슴',cue:'팔꿈치를 살짝 굽힌 각도 그대로 고정해 가슴으로만 모은다.'},
+        {id:'m3',name:'케이블 트라이셉 프레스다운',meta:'4세트 × 12회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸통에 고정하고 아래로만 편다.'},
+        {id:'m4',name:'오버헤드 트라이셉 익스텐션',meta:'3세트 × 10회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 머리 옆에 고정하고 아래로만 접었다 편다.'},
+        {id:'m5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
+      ]},
+      2:{label:'화 · 등 + 이두', intensity:'high', ex:[
+        {id:'m6',name:'랫풀다운',meta:'4세트 × 10회 · 휴식 90초',part:'등',cue:'가슴을 바에 가져간다는 느낌. 팔이 아니라 겨드랑이로 당긴다.'},
+        {id:'m7',name:'시티드로우',meta:'4세트 × 12회 · 휴식 75초',part:'등',cue:'허리를 세우고 견갑골을 뒤로 모았다가 천천히 푼다.'},
+        {id:'m8',name:'덤벨 바이셉컬',meta:'4세트 × 10회 · 휴식 60초',part:'이두',cue:'팔꿈치를 옆구리에 붙여 고정. 반동 금지.'},
+        {id:'m9',name:'프리처컬(이지바)',meta:'3세트 × 10회 · 휴식 60초',part:'이두',cue:'팔꿈치를 패드에 고정하고 반동 없이 접는다.'},
+        {id:'m10',name:'슈퍼맨',meta:'3세트 × 15회 · 휴식 45초',part:'허리·코어',cue:'턱을 당긴 채 팔다리를 2초 들고 버틴다.'}
+      ]},
+      3:{label:'수 · 하체', intensity:'high', ex:[
+        {id:'m11',name:'레그프레스',meta:'4세트 × 12회 · 휴식 90초',part:'하체',cue:'무릎이 발끝 방향을 벗어나지 않게.'},
+        {id:'m12',name:'레그컬',meta:'3세트 × 12회 · 휴식 60초',part:'햄스트링',cue:'허벅지가 패드에서 뜨지 않게 고정한다.'},
+        {id:'m13',name:'레그익스텐션',meta:'3세트 × 12회 · 휴식 60초',part:'허벅지 앞',cue:'끝에서 1초 멈췄다 천천히 내린다.'},
+        {id:'m14',name:'카프레이즈',meta:'3세트 × 20회 · 휴식 45초',part:'종아리',cue:'끝까지 올렸다 완전히 내린다.'},
+        {id:'m15',name:'플랭크',meta:'3세트 × 40초 · 휴식 45초',part:'코어',cue:'엉덩이를 조이고 갈비뼈를 닫는다.'}
+      ]},
+      4:{label:'목 · 어깨 + 전완', intensity:'moderate', ex:[
+        {id:'m16',name:'숄더프레스',meta:'3세트 × 12회 · 휴식 60초',part:'어깨',cue:'허리가 뒤로 젖혀지면 무게가 과하다.'},
+        {id:'m17',name:'사이드 레터럴레이즈',meta:'3세트 × 15회 · 휴식 45초',part:'어깨',cue:'팔꿈치를 살짝 굽힌 채 어깨 높이까지만 든다.'},
+        {id:'m18',name:'리스트 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'무릎에 팔뚝을 올리고 손목만 움직인다.'},
+        {id:'m19',name:'리버스 리스트 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'손등이 위를 보는 그립으로 반대 방향도 채운다.'},
+        {id:'m20',name:'데드버그',meta:'3세트 × 양쪽 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채 팔다리를 반대로 뻗는다.'}
+      ]},
+      5:{label:'금 · 팔 집중', intensity:'high', ex:[
+        {id:'m21',name:'덤벨 바이셉컬',meta:'4세트 × 10회 · 휴식 60초',part:'이두',cue:'반동 없이, 마지막 세트는 실패 지점까지.'},
+        {id:'m22',name:'덤벨 해머컬',meta:'4세트 × 12회 · 휴식 60초',part:'전완 + 이두',cue:'손등이 바깥을 보는 세로 그립.'},
+        {id:'m23',name:'케이블 트라이셉 프레스다운',meta:'4세트 × 12회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸통에 고정.'},
+        {id:'m24',name:'오버헤드 트라이셉 익스텐션',meta:'3세트 × 10회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 머리 옆에 고정.'},
+        {id:'m25',name:'리스트 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'이번 주 팔 자극을 여기서 마무리한다.'}
+      ]},
+      6:{label:'토 · 하체 + 코어', intensity:'moderate', ex:[
+        {id:'m26',name:'레그프레스',meta:'3세트 × 15회 · 휴식 60초',part:'하체',cue:'수요일보다 가볍게, 횟수로 채운다.'},
+        {id:'m27',name:'덤벨 런지',meta:'3세트 × 양쪽 12회 · 휴식 60초',part:'하체',cue:'앞 무릎이 발끝을 넘지 않게.'},
+        {id:'m28',name:'힙쓰러스트',meta:'3세트 × 15회 · 휴식 60초',part:'엉덩이',cue:'끝에서 엉덩이를 꽉 조이고 1초 버틴다.'},
+        {id:'m29',name:'데드버그',meta:'3세트 × 양쪽 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채로 유지한다.'},
+        {id:'m30',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
+      ]},
+      0:{label:'일 · 액티브 리커버리', intensity:'light', ex:REST_ITEMS,
+         warmup:[{id:'rw1',name:'제자리 걷기',meta:'2분'}], cardio:[], cooldown:[]}
+    }
+  },
+  'home-7':{
+    id:'home-7', label:'집 · 매일', dayLabel:'매일 (요일별 강도 다름)',
+    why:'기구 없이 매일 운동하되 강도를 나눠서 회복 시간을 만든다. 월(밀기)·화(당기기)·금(팔 집중)에서 팔을 직접 자극하고, 수·토는 하체 위주로 팔을 쉬게 한다. 일요일은 걷기+스트레칭만 하는 액티브 리커버리다 — 맨몸 운동도 매일 고강도로 밀면 손목·팔꿈치 피로가 누적되기 쉬워서다.',
+    warmup:[
+      {id:'w1',name:'제자리 걷기 + 팔 흔들기',meta:'2분'},
+      {id:'w2',name:'어깨·팔꿈치 돌리기',meta:'각 15회'},
+      {id:'w3',name:'무릎 굽혔다 펴기',meta:'15회'}
+    ],
+    cardio:[{id:'hc1',name:'유산소',meta:'제자리 뛰기 또는 계단 10~15분'}],
+    cooldown:[
+      {id:'hs1',name:'가슴·어깨 열기',meta:'30초 × 2'},
+      {id:'hs2',name:'삼두 뒤로 당기기',meta:'양팔 각 30초'},
+      {id:'hs3',name:'허벅지 뒤 스트레칭',meta:'양쪽 각 30초'}
+    ],
+    split:{
+      1:{label:'월 · 밀기 (가슴 + 삼두)', intensity:'high', ex:[
+        {id:'a1',name:'푸시업',meta:'4세트 × 최대반복 · 휴식 75초',part:'가슴+삼두',cue:'몸을 판자처럼. 허리가 꺼지면 무릎을 대고 자세를 지킨다.'},
+        {id:'a2',name:'다이아몬드 푸시업',meta:'3세트 × 8~12회 · 휴식 75초',part:'삼두',cue:'손으로 삼각형을 만들고 팔꿈치를 몸통에 붙여 내린다.'},
+        {id:'a3',name:'의자 딥스',meta:'4세트 × 12회 · 휴식 60초',part:'삼두',cue:'의자 두 개 또는 침대 모서리. 어깨가 아프면 깊이를 줄인다.'},
+        {id:'a4',name:'파이크 푸시업',meta:'3세트 × 8회 · 휴식 60초',part:'어깨',cue:'엉덩이를 높이 들고 정수리를 바닥으로 내린다.'},
+        {id:'a5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
+      ]},
+      2:{label:'화 · 당기기 (등 + 이두)', intensity:'high', ex:[
+        {id:'b1',name:'책상 밑 인버티드 로우',meta:'4세트 × 10회 · 휴식 75초',part:'등+이두',cue:'튼튼한 책상 아래에 누워 가슴을 상판으로 당긴다.'},
+        {id:'b2',name:'백팩 컬',meta:'4세트 × 12회 · 휴식 60초',part:'이두',cue:'책 넣은 가방을 양손으로. 팔꿈치 고정, 내릴 때 3초.'},
+        {id:'b3',name:'수건 아이소메트릭 컬',meta:'3세트 × 20초 × 양팔 · 휴식 45초',part:'이두',cue:'수건을 발로 밟고 위로 당기며 버틴다.'},
+        {id:'b4',name:'슈퍼맨',meta:'3세트 × 15회 · 휴식 45초',part:'허리',cue:'팔다리를 2초 들고 버틴다.'},
+        {id:'b5',name:'플랭크',meta:'3세트 × 40초 · 휴식 45초',part:'코어',cue:'엉덩이를 조이고 갈비뼈를 닫는다.'}
+      ]},
+      3:{label:'수 · 하체', intensity:'high', ex:[
+        {id:'c1',name:'맨몸 스쿼트',meta:'4세트 × 20회 · 휴식 75초',part:'하체',cue:'무릎이 안쪽으로 모이지 않게 벌린다.'},
+        {id:'c2',name:'런지',meta:'3세트 × 양쪽 12회 · 휴식 60초',part:'하체',cue:'앞 무릎이 발끝을 넘지 않게.'},
+        {id:'c3',name:'힙 힌지 (굿모닝)',meta:'3세트 × 15회 · 휴식 60초',part:'엉덩이·햄스트링',cue:'무릎은 살짝만 굽히고 엉덩이를 뒤로 민다.'},
+        {id:'c4',name:'카프레이즈',meta:'3세트 × 25회 · 휴식 45초',part:'종아리',cue:'계단 끝에서 뒤꿈치를 최대한 내렸다 올린다.'},
+        {id:'c5',name:'데드버그',meta:'3세트 × 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채 팔다리를 반대로 뻗는다.'}
+      ]},
+      4:{label:'목 · 어깨 + 전완', intensity:'moderate', ex:[
+        {id:'d1',name:'파이크 푸시업',meta:'3세트 × 8회 · 휴식 60초',part:'어깨',cue:'엉덩이를 높이 들고 정수리를 바닥으로 내린다.'},
+        {id:'d2',name:'백팩 프론트레이즈',meta:'3세트 × 12회 · 휴식 45초',part:'어깨',cue:'책 넣은 가방을 정면으로 어깨 높이까지만 든다.'},
+        {id:'d3',name:'손목 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'무릎에 팔뚝을 올리고 손목만 접었다 편다.'},
+        {id:'d4',name:'백팩 리버스 컬',meta:'3세트 × 12회 · 휴식 45초',part:'전완',cue:'손등이 위를 보는 그립. 전완 바깥쪽을 키운다.'},
+        {id:'d5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
+      ]},
+      5:{label:'금 · 팔 집중', intensity:'high', ex:[
+        {id:'e1',name:'백팩 컬',meta:'4세트 × 12회 · 휴식 60초',part:'이두',cue:'반동 없이. 마지막 세트는 실패 지점까지.'},
+        {id:'e2',name:'해머 스타일 백팩 컬',meta:'4세트 × 12회 · 휴식 60초',part:'전완 + 이두',cue:'손바닥이 마주보는 그립.'},
+        {id:'e3',name:'다이아몬드 푸시업',meta:'3세트 × 10회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸에 붙여야 삼두에 실린다.'},
+        {id:'e4',name:'의자 딥스',meta:'3세트 × 12회 · 휴식 60초',part:'삼두',cue:'어깨가 아프면 깊이를 줄인다.'},
+        {id:'e5',name:'손목 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'이번 주 팔 자극을 여기서 마무리한다.'}
+      ]},
+      6:{label:'토 · 하체 + 코어', intensity:'moderate', ex:[
+        {id:'f1',name:'맨몸 스쿼트',meta:'3세트 × 25회 · 휴식 60초',part:'하체',cue:'수요일보다 가볍게, 횟수로 채운다.'},
+        {id:'f2',name:'글루트 브릿지',meta:'3세트 × 15회 · 휴식 45초',part:'엉덩이',cue:'끝에서 엉덩이를 꽉 조이고 1초 버틴다.'},
+        {id:'f3',name:'카프레이즈',meta:'3세트 × 25회 · 휴식 45초',part:'종아리',cue:'끝까지 올렸다 완전히 내린다.'},
+        {id:'f4',name:'데드버그',meta:'3세트 × 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채로 유지한다.'},
+        {id:'f5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
+      ]},
+      0:{label:'일 · 액티브 리커버리', intensity:'light', ex:REST_ITEMS,
+         warmup:[{id:'rw1',name:'제자리 걷기',meta:'2분'}], cardio:[], cooldown:[]}
+    }
+  }
+};
+
+/* ============================================================
+   features/budget/data.js
+   예산(계획)은 카테고리>항목 단위로 planned만 갖는다.
+   실제 사용액·할인은 카테고리 단위 필드(actual, discount)로
+   결산 탭에서 직접 입력한다 — 카테고리 id는 고정이라 이름을
+   바꿔도 값이 끊기지 않는다.
+   ============================================================ */
+
+const budgetTemplate = () => ([
+  { id:'fixed', name:'고정비용', emoji:'🏠', open:true, items:[], actual:0, discount:0 },
+  { id:'subscription', name:'구독료', emoji:'📺', open:true, items:[], actual:0, discount:0 },
+  { id:'living', name:'생활비', emoji:'🛒', open:true, items:[], actual:0, discount:0 },
+  { id:'extra', name:'부가비용', emoji:'✨', open:false, items:[], actual:0, discount:0 }
+]);
+
+/* ============================================================
+   state + repository
+   ============================================================ */
+const state = {
+  tab:'home',
+  sub:{ meal:'today', work:'today', money:'budget' },
+  settings:{ env:'gym', activePlan:'gym-7', weight:60 },
+  monthKey: ymOf(TODAY),
+  calMonth: ymOf(TODAY),
+  meals:{}, mealCache:{},
+  work:{},
+  budget:{ categories: budgetTemplate(), log:[] },
+  prevBudget:null,
+  openRecipe:null
+};
+
+async function loadAll(){
+  const s = await DB.get(K.settings); if(s) Object.assign(state.settings, s);
+  state.meals = await DB.get(K.meals(state.monthKey)) || {};
+  state.mealCache[state.monthKey] = state.meals;
+  state.work  = await DB.get(K.work(state.monthKey)) || {};
+  const b = await DB.get(K.money(state.monthKey));
+  if(b) state.budget = b;
+  const [y,m] = state.monthKey.split('-').map(Number);
+  const prevYm = m===1 ? `${y-1}-12` : `${y}-${pad2(m-1)}`;
+  state.prevBudget = await DB.get(K.money(prevYm));
+  state.prevYm = prevYm;
+}
+const saveSettings = () => DB.set(K.settings, state.settings);
+const saveMeals    = () => DB.set(K.meals(state.monthKey), state.meals);
+const saveWork     = () => DB.set(K.work(state.monthKey), state.work);
+const saveBudget   = () => DB.set(K.money(state.monthKey), state.budget);
+
+
+/* ============================================================
+   features/meals/service.js
+   ============================================================ */
+/* 이전: 날짜×슬롯으로 고정 계산해서, 근무 중 해결하는 끼니의 메뉴가 그냥 버려졌다.
+   이후: 실제로 집에서 먹는 끼니(점심/저녁 중 tracked인 것)만 순서대로 세어
+   로테이션을 매긴다. 근무 중 해결하는 슬롯은 카운트에서 빠지므로,
+   그 자리에 올 예정이던 메뉴가 자동으로 다음 집밥 끼니로 넘어간다. */
+function rotationIndexUpTo(date, slot){
+  let count = 0;
+  const target = new Date(date+'T00:00:00');
+  const d = new Date(MEAL_EPOCH);
+  while(d < target){
+    count += Schedule.mealsToday(ymd(d)).filter(s=>s!=='breakfast').length;
+    d.setDate(d.getDate()+1);
+  }
+  if(slot==='dinner' && Schedule.mealsToday(date).includes('lunch')) count += 1;
+  return count;
+}
+function rotationMenuId(date, slot){
+  return MENUS[rotationIndexUpTo(date,slot) % MENUS.length].id;
+}
+function mealOf(date, slot){
+  const store = state.mealCache[ymOf(date)] || {};
+  const rec = (store[date]||{})[slot] || {};
+  if(slot==='breakfast') return { done: !!rec.done };
+  if(!Schedule.mealsToday(date).includes(slot)) return { done: !!rec.done, menuId:null };
+  return { menuId: rec.menuId || rotationMenuId(date,slot), done: !!rec.done };
+}
+function setMeal(date, slot, patch){
+  if(!state.meals[date]) state.meals[date] = {};
+  const cur = mealOf(date,slot);
+  state.meals[date][slot] = { menuId: cur.menuId, done: cur.done, ...patch };
+  state.mealCache[state.monthKey] = state.meals;
+  saveMeals();
+}
+function todayMealSummary(){
+  const tracked = Schedule.mealsToday(TODAY);
+  const b = mealOf(TODAY,'breakfast');
+  const l = mealOf(TODAY,'lunch'), d = mealOf(TODAY,'dinner');
+  return { tracked, breakfast:b, lunch:{...l, menu:menuById(l.menuId)}, dinner:{...d, menu:menuById(d.menuId)} };
+}
+
+/* ============================================================
+   features/workout/service.js — 매일 운동, 강도는 요일이 결정
+   ============================================================ */
+const activePlan = () => PLANS[state.settings.activePlan];
+function isWorkoutDay(){ return true; } // 매일 운동한다 — 요일별로 강도만 다르다
+function routineFor(date){
+  const p = activePlan();
+  const s = p.split[dowOf(date)];
+  const warmup = (s && s.warmup) || p.warmup;
+  const cardio = (s && s.cardio !== undefined) ? s.cardio : p.cardio;
+  const cooldown = (s && s.cooldown) || p.cooldown;
+  return { title: s.label, intensity: s.intensity, groups:[
+    {key:'warmup', label:'준비운동', items:warmup},
+    {key:'main',   label:'본운동',   items:s.ex},
+    {key:'cardio', label:'유산소',   items:cardio},
+    {key:'cool',   label:'마무리 스트레칭', items:cooldown}
+  ]};
+}
+function workRec(date){
+  if(!state.work[date]) state.work[date] = { plan:state.settings.activePlan, done:{}, rpe:null };
+  return state.work[date];
+}
+function workProgress(date){
+  const r = routineFor(date), rec = state.work[date] || {done:{}};
+  let total=0, done=0, mainTotal=0, mainDone=0;
+  r.groups.forEach(g=>g.items.forEach(it=>{
+    total++; const ok = !!rec.done[it.id]; if(ok) done++;
+    if(g.key==='main'){ mainTotal++; if(ok) mainDone++; }
+  }));
+  return {total,done,mainTotal,mainDone,pct: total? Math.round(done/total*100):0};
+}
+
+/* ============================================================
+   features/budget/service.js
+   ============================================================ */
+const catById = id => state.budget.categories.find(c=>c.id===id);
+const sumCat = (cat,field) => cat.items.reduce((a,i)=>a+(Number(i[field])||0),0);
+function catNet(cat){ return (+cat.actual||0) - (+cat.discount||0); }
+function totals(b){
+  const cs = b ? b.categories : state.budget.categories;
+  return cs.reduce((a,c)=>({
+    planned: a.planned + c.items.reduce((x,i)=>x+(+i.planned||0),0),
+    actual:  a.actual  + ((c.actual!==undefined) ? (+c.actual||0) : sumCat(c,'actual')),
+    discount:a.discount+ ((c.discount!==undefined) ? (+c.discount||0) : sumCat(c,'discount'))
+  }),{planned:0,actual:0,discount:0});
+}
+function livingLeft(){
+  const c = catById('living'); if(!c) return 0;
+  return sumCat(c,'planned') - catNet(c);
+}
+
+/* ============================================================
+   app/shell.js — 라우팅 & 렌더
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const view = $('#view');
+
+const TITLES = {
+  home:['자취루틴', () => `${fmtDate(TODAY)} · ${Schedule.shiftLabel(Schedule.shiftOf(TODAY))}`],
+  meal:['식단', () => {
+    if(Schedule.isOffDay(TODAY)) return '오늘은 휴무 — 세 끼 모두 관리';
+    return Schedule.shiftOf(TODAY)==='open' ? '점심은 근무 중 해결' : '저녁은 근무 중 해결';
+  }],
+  work:['운동', () => {
+    const s = Schedule.workoutSlot(TODAY), sh = Schedule.showerSlot(TODAY), r = routineFor(TODAY);
+    return `${s.start}~${s.end} · 샤워 ${sh.start}~${sh.end} · ${r.title} · ${INTENSITY_LABEL[r.intensity]}`;
+  }],
+  money:['돈', () => `${state.monthKey.replace('-','년 ')}월`]
+};
+function render(){
+  const [t,sub] = TITLES[state.tab];
+  $('#topTitle').textContent = t;
+  $('#topSub').textContent = sub();
+  document.querySelectorAll('#tabs button').forEach(b=>
+    b.setAttribute('aria-current', String(b.dataset.tab===state.tab)));
+  view.innerHTML = ({home:viewHome, meal:viewMeal, work:viewWork, money:viewMoney})[state.tab]();
+  view.classList.remove('pop'); void view.offsetWidth; view.classList.add('pop');
+}
+function go(tab, sub){ state.tab=tab; if(sub) state.sub[tab]=sub; window.scrollTo(0,0); render(); }
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-tab]'); if(b) go(b.dataset.tab);
+});
+window.addEventListener('scroll', ()=> $('#top').classList.toggle('scrolled', window.scrollY>4));
+
+/* 시트 */
+function openSheet(html){
+  $('#sheet').innerHTML = '<div class="grab"></div>'+html;
+  $('#sheet').classList.add('on'); $('#scrim').classList.add('on');
+}
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); }
+$('#scrim').addEventListener('click', closeSheet);
+
+/* ============================================================
+   app/home.js
+   ============================================================ */
+function scheduleCard(date){
+  const shift = Schedule.shiftOf(date), off = Schedule.isOffDay(date);
+  const now = nowHM();
+  const r = routineFor(date);
+  const rows = Schedule.blocksFor(date).map(([s,e,label,cat])=>{
+    const active = now>=s && now<e;
+    const text = cat==='workout' ? `${label} · ${r.title} (${INTENSITY_LABEL[r.intensity]})` : label;
+    return `<div class="srow ${active?'now':''}">
+      <div class="stime">${s}</div>
+      <div class="sdot" style="background:${CAT_COLOR[cat]}"></div>
+      <div class="slabel">${esc(text)}</div>
+    </div>`;
+  }).join('');
+  return `
+  <section class="card">
+    <div class="card-head">
+      <div class="card-label">📅 오늘 스케줄</div>
+      <span class="chip ${off?'off':'job'}">${Schedule.shiftLabel(shift)}${off?' · 휴무':''}</span>
+    </div>
+    <div class="sched">${rows}</div>
+  </section>`;
+}
+function viewHome(){
+  const m = todayMealSummary();
+  const pg = workProgress(TODAY), r = routineFor(TODAY);
+  const slot = Schedule.workoutSlot(TODAY), shower = Schedule.showerSlot(TODAY), off = Schedule.isOffDay(TODAY);
+  const left = livingLeft();
+
+  const mealLine = (slot,label,x)=>`
+    <div class="row" style="padding:11px 0">
+      <div style="font-size:24px">${x.menu.emoji}</div>
+      <div style="flex:1">
+        <div class="r-name">${label} · ${esc(x.menu.name)}</div>
+        <div class="r-meta">${x.menu.kcal}kcal · 단백질 ${x.menu.protein}g · ${x.menu.min}분</div>
+      </div>
+      ${x.done?'<span class="chip meal">완료</span>':(x.menu.leftover?'<span class="chip off">남은 음식</span>':'')}
+    </div>`;
+  const excludedLine = (label,note)=>`
+    <div class="row" style="padding:11px 0">
+      <div style="font-size:24px">🏢</div>
+      <div style="flex:1">
+        <div class="r-name">${label} · 근무 중 해결</div>
+        <div class="r-meta">${note}</div>
+      </div>
+    </div>`;
+
+  const trackable = m.tracked.filter(s=>s!=='breakfast');
+  const target = trackable.find(s=>!m[s].done) || trackable[trackable.length-1];
+  const targetMenu = m[target].menu;
+
+  return scheduleCard(TODAY) + `
+  <section class="card">
+    <div class="card-head">
+      <div class="card-label">🍚 오늘 뭐 먹지</div>
+      <button class="btn line" style="padding:6px 11px" data-go="meal|today">식단 열기</button>
+    </div>
+    ${m.tracked.includes('lunch') ? mealLine('lunch','점심',m.lunch) : excludedLine('점심','오픈반 근무 시간에 포함')}
+    ${m.tracked.includes('dinner') ? mealLine('dinner','저녁',m.dinner) : excludedLine('저녁','마감반 근무 시간에 포함')}
+    <button class="btn meal full" style="margin-top:12px" data-recipe="${targetMenu.id}">
+      ${esc(targetMenu.name)} 레시피 시작
+    </button>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div class="card-label">🏋️ 오늘 운동 · ${esc(r.title)}</div>
+      <span class="chip work" style="background:${INTENSITY_COLOR[r.intensity]}22;color:${INTENSITY_COLOR[r.intensity]}">${INTENSITY_LABEL[r.intensity]}</span>
+    </div>
+    <div class="big">${pg.mainDone} <span class="unit">/ ${pg.mainTotal} 완료</span></div>
+    <div class="bar" style="margin:12px 0 4px"><i style="width:${pg.pct}%"></i></div>
+    <div class="tiny">${slot.start}~${slot.end} · 샤워 ${shower.start}~${shower.end} · 전체 ${pg.done}/${pg.total}개${off?' · 오늘은 휴무지만 운동 시간은 그대로':''}</div>
+    <button class="btn work full" style="margin-top:12px" data-go="work|today">루틴 시작</button>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div class="card-label">💰 오늘 돈</div>
+      <button class="btn line" style="padding:6px 11px" data-go="money|budget">예산 열기</button>
+    </div>
+    <div class="big" style="${left<0?'color:var(--warn)':''}">생활비 ${won(left)}<span class="unit">원 남음</span></div>
+    <div class="tiny" style="margin-top:8px">실제 사용액은 결산 탭에서 직접 입력한다</div>
+    <button class="btn money full" style="margin-top:12px" data-go="money|close">결산에서 입력</button>
+  </section>
+
+  <button class="btn ghost full" style="margin-top:4px;padding:15px" data-log="1">+ 기록</button>`;
+}
+
+/* ============================================================
+   features/meals/view.js
+   ============================================================ */
+function viewMeal(){
+  const s = state.sub.meal;
+  const seg = `<div class="seg">
+    ${[['today','오늘 식사'],['cal','식단 달력'],['recipe','레시피']]
+      .map(([k,l])=>`<button data-sub="meal|${k}" aria-current="${s===k}">${l}</button>`).join('')}
+  </div>`;
+  return seg + ({today:mealToday, cal:mealCal, recipe:mealRecipe}[s])();
+}
+function mealToday(){
+  const m = todayMealSummary();
+
+  const breakfastCard = `
+    <section class="card flat">
+      <div class="card-head" style="margin-bottom:0">
+        <div class="card-label">아침 (간단)</div>
+        <button class="btn ${m.breakfast.done?'ghost':'line'}" style="padding:6px 12px" data-mealdone="breakfast">${m.breakfast.done?'완료 취소':'먹었어요'}</button>
+      </div>
+      <div class="muted" style="font-size:14px;margin-top:6px">계란 2개 + 우유나 토스트 정도로 5분 내로 가볍게. 레시피 없이 체크만 한다.</div>
+    </section>`;
+
+  const slotCard = (slot,label,workNote)=>{
+    if(!m.tracked.includes(slot)){
+      return `<section class="card flat" style="opacity:.72">
+        <div class="card-label">${label}</div>
+        <div class="muted" style="font-size:14px;margin-top:6px">${workNote} — 집에서 따로 준비하지 않는다.</div>
+      </section>`;
+    }
+    const x = m[slot];
+    return `
+    <section class="card">
+      <div class="card-head">
+        <div class="card-label">${label}</div>
+        <button class="btn line" style="padding:6px 11px" data-pick="${slot}">메뉴 바꾸기</button>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="font-size:34px">${x.menu.emoji}</div>
+        <div style="flex:1">
+          <div style="font-size:19px;font-weight:800;letter-spacing:-.4px">${esc(x.menu.name)}</div>
+          <div class="tiny" style="margin-top:3px">${x.menu.kcal}kcal · 단백질 ${x.menu.protein}g · 약 ${won(x.menu.cost)}원 · ${x.menu.min}분</div>
+        </div>
+      </div>
+      ${x.menu.batch?`<div class="chip meal" style="margin-top:10px">1.5~2배로 조리 → 다음 끼니 자동 해결</div>`:''}
+      ${x.menu.leftover?`<div class="chip off" style="margin-top:10px">어제 만든 것 데우기</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn meal" style="flex:1" data-recipe="${x.menu.id}">레시피</button>
+        <button class="btn ${x.done?'ghost':'line'}" style="flex:1" data-mealdone="${slot}">${x.done?'완료 취소':'먹었어요'}</button>
+      </div>
+    </section>`;
+  };
+
+  const p = protein();
+  const trackedProtein = (m.tracked.includes('lunch')?m.lunch.menu.protein:0) + (m.tracked.includes('dinner')?m.dinner.menu.protein:0);
+  const total = trackedProtein + BREAKFAST_PROTEIN;
+
+  return breakfastCard
+    + slotCard('lunch','점심','오픈반 근무 중 해결')
+    + slotCard('dinner','저녁','마감반 근무 중 해결')
+    + `
+    <section class="card">
+      <div class="card-label" style="margin-bottom:10px">오늘 단백질 합계</div>
+      <div class="big sm">${total}<span class="unit">g</span></div>
+      <div class="tiny" style="margin-top:6px">목표 ${p.lo}~${p.hi}g · 아침 간단식은 ${BREAKFAST_PROTEIN}g으로 가정해 더했다.</div>
+      <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+        <span class="muted">체중</span>
+        <input class="inp num" style="width:90px" type="number" inputmode="decimal" value="${state.settings.weight}" data-weight="1">
+        <span class="muted">kg</span>
+      </div>
+    </section>`;
+}
+function protein(){
+  const w = Number(state.settings.weight)||60;
+  return { lo: Math.round(w*1.6), hi: Math.round(w*2.0), w };
+}
+function mealCal(){
+  const [y,mo] = state.calMonth.split('-').map(Number);
+  const first = new Date(y,mo-1,1), days = new Date(y,mo,0).getDate();
+  let cells = '';
+  for(let i=0;i<first.getDay();i++) cells += '<div></div>';
+  for(let d=1;d<=days;d++){
+    const date = `${y}-${pad2(mo)}-${pad2(d)}`;
+    const tracked = Schedule.mealsToday(date);
+    const isT = date===TODAY;
+    const lunchCell = tracked.includes('lunch') ? menuById(mealOf(date,'lunch').menuId).emoji : `<span style="font-size:12px;color:var(--ink-3)">🏢</span>`;
+    const dinnerCell = tracked.includes('dinner') ? menuById(mealOf(date,'dinner').menuId).emoji : `<span style="font-size:12px;color:var(--ink-3)">🏢</span>`;
+    cells += `<button data-day="${date}" style="text-align:center;padding:7px 2px;border-radius:10px;${isT?'background:var(--meal-bg)':''}">
+      <div style="font-size:12px;font-weight:700;color:${isT?'var(--meal)':'var(--ink-2)'}">${d}</div>
+      <div style="font-size:15px;line-height:1.25">${lunchCell}<br>${dinnerCell}</div>
+    </button>`;
+  }
+  return `
+  <section class="card">
+    <div class="card-head">
+      <button class="btn line" style="padding:6px 12px" data-cal="-1">‹</button>
+      <div style="font-weight:800">${y}년 ${mo}월</div>
+      <button class="btn line" style="padding:6px 12px" data-cal="1">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:11px;color:var(--ink-3);margin-bottom:6px">
+      ${DOW.map(d=>`<div>${d}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells}</div>
+    <div class="tiny" style="margin-top:12px">🏢가 표시된 칸은 근무 중 해결하는 끼니라 집에서 준비하지 않는다. 그 자리에 올 예정이던 메뉴는 다음 집밥 끼니로 자동 이월된다.</div>
+  </section>
+  <section class="card">
+    <div class="card-label" style="margin-bottom:8px">자동 로테이션</div>
+    <div class="muted" style="font-size:14px">${MENUS.map(m=>m.emoji+' '+m.name).join(' → ')} 순서로 돈다. 대패짜글이를 넉넉히 끓인 날 다음 끼니는 자동으로 남은 음식이 된다.</div>
+  </section>`;
+}
+function mealRecipe(){
+  if(state.openRecipe) return recipeDetail(menuById(state.openRecipe));
+  return MENUS.map(m=>`
+    <button class="card flat" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left" data-recipe="${m.id}">
+      <div style="font-size:28px">${m.emoji}</div>
+      <div style="flex:1">
+        <div class="r-name">${esc(m.name)}</div>
+        <div class="r-meta">${m.min}분 · ${m.kcal}kcal · 단백질 ${m.protein}g · 약 ${won(m.cost)}원</div>
+      </div>
+      <span class="chip meal">${m.tag}</span>
+    </button>`).join('');
+}
+function recipeDetail(m){
+  return `
+  <button class="btn line" style="margin-bottom:12px" data-back="1">‹ 레시피 목록</button>
+  <section class="card">
+    <div style="font-size:22px;font-weight:800;letter-spacing:-.5px">${m.emoji} ${esc(m.name)}</div>
+    <div class="tiny" style="margin-top:4px">${m.min}분 · ${m.kcal}kcal · 단백질 ${m.protein}g · 약 ${won(m.cost)}원</div>
+    <div style="margin-top:14px" class="card-label">재료</div>
+    <div class="muted" style="font-size:14.5px;margin-top:6px">${m.items.map(esc).join(' · ')}</div>
+  </section>
+  ${m.steps.map((s,i)=>`
+    <section class="card flat">
+      <div style="display:flex;gap:10px">
+        <div style="width:24px;height:24px;border-radius:8px;background:var(--meal-bg);color:var(--meal);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none">${i+1}</div>
+        <div style="flex:1">
+          <div class="r-name">${esc(s.t)}</div>
+          <div class="muted" style="font-size:14px;margin-top:4px">${esc(s.d)}</div>
+          ${s.sec?`<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+            <button class="btn line" style="padding:7px 14px" data-timer="${s.sec}" data-tid="t${i}">타이머 ${Math.floor(s.sec/60)?Math.floor(s.sec/60)+'분':''}${s.sec%60?(s.sec%60)+'초':''}</button>
+            <span id="t${i}" style="font-variant-numeric:tabular-nums;font-weight:800;color:var(--meal)"></span>
+          </div>`:''}
+        </div>
+      </div>
+    </section>`).join('')}
+  <section class="card" style="background:var(--meal-bg)">
+    <div class="card-label" style="color:var(--meal)">왜 이 구성인가</div>
+    <div style="font-size:14.5px;margin-top:6px">${esc(m.tip)}</div>
+  </section>`;
+}
+
+/* 타이머 */
+let timerId = null;
+function startTimer(sec, elId){
+  if(timerId) clearInterval(timerId);
+  let left = sec;
+  const el = document.getElementById(elId);
+  const tick = ()=>{
+    if(!document.getElementById(elId)){ clearInterval(timerId); return; }
+    const mm = Math.floor(left/60), ss = left%60;
+    document.getElementById(elId).textContent = `${mm}:${pad2(ss)}`;
+    if(left<=0){ clearInterval(timerId); document.getElementById(elId).textContent='완료!'; }
+    left--;
+  };
+  tick(); timerId = setInterval(tick,1000);
+}
+
+/* ============================================================
+   features/workout/view.js
+   ============================================================ */
+function viewWork(){
+  const s = state.sub.work;
+  const seg = `<div class="seg">
+    ${[['today','오늘 루틴'],['guide','운동 가이드'],['log','기록']]
+      .map(([k,l])=>`<button data-sub="work|${k}" aria-current="${s===k}">${l}</button>`).join('')}
+  </div>`;
+  return seg + ({today:workToday, guide:workGuide, log:workLog}[s])();
+}
+const painBanner = `<div class="card flat" style="background:var(--warn-bg);color:var(--warn);font-size:13.5px;font-weight:600">
+  통증이 생기면 그 세트에서 즉시 멈춘다. 관절이 시리거나 찌릿한 느낌이 이틀 이상 가면 운동을 쉬고 정형외과나 전문 트레이너에게 상담받는다.</div>`;
+
+function workToday(){
+  const slot = Schedule.workoutSlot(TODAY), shower = Schedule.showerSlot(TODAY), off = Schedule.isOffDay(TODAY);
+  const r = routineFor(TODAY), rec = workRec(TODAY), pg = workProgress(TODAY);
+  const grp = g => `
+    <section class="card">
+      <div class="card-head">
+        <div class="card-label">${g.label}</div>
+        <span class="tiny">${g.items.filter(i=>rec.done[i.id]).length}/${g.items.length}</span>
+      </div>
+      ${g.items.map(it=>`
+        <div class="row ${rec.done[it.id]?'on':''}" data-check="${it.id}">
+          <div class="tick">✓</div>
+          <div style="flex:1">
+            <div class="r-name">${esc(it.name)}</div>
+            <div class="r-meta">${esc(it.meta)}${it.part?' · '+esc(it.part):''}</div>
+          </div>
+        </div>`).join('')}
+    </section>`;
+  return `
+  <section class="card">
+    <div class="card-head">
+      <div class="card-label">🏋️ ${esc(r.title)}</div>
+      <span class="chip work" style="background:${INTENSITY_COLOR[r.intensity]}22;color:${INTENSITY_COLOR[r.intensity]}">${INTENSITY_LABEL[r.intensity]}</span>
+    </div>
+    <div class="tiny" style="margin-bottom:10px">${slot.start}~${slot.end} (이동 포함 2시간) · 샤워 ${shower.start}~${shower.end}${off?' · 오늘은 휴무일, 운동 시각은 그대로':''}</div>
+    <div class="big">${pg.done} <span class="unit">/ ${pg.total} 완료</span></div>
+    <div class="bar" style="margin:12px 0"><i style="width:${pg.pct}%"></i></div>
+    <div class="tiny">본운동 ${pg.mainDone}/${pg.mainTotal}개</div>
+    ${pg.pct===100?`<button class="btn work full" style="margin-top:12px" data-finish="1">오늘 운동 마치기</button>`:''}
+  </section>
+  ${painBanner}
+  ${r.groups.filter(g=>g.items.length).map(grp).join('')}`;
+}
+function workGuide(){
+  const p = activePlan();
+  const order = [1,2,3,4,5,6,0];
+  const list = order.map(dow=>p.split[dow]);
+  return `
+  <section class="card" style="background:var(--work-bg)">
+    <div class="card-label" style="color:var(--work)">왜 이 구성인가</div>
+    <div style="font-size:14.5px;margin-top:6px">${esc(p.why)}</div>
+  </section>
+  ${painBanner}
+  ${list.map(s=>`
+    <section class="card">
+      <div class="card-head">
+        <div class="card-label" style="margin-bottom:0">${esc(s.label)}</div>
+        <span class="chip work" style="background:${INTENSITY_COLOR[s.intensity]}22;color:${INTENSITY_COLOR[s.intensity]}">${INTENSITY_LABEL[s.intensity]}</span>
+      </div>
+      ${s.ex.map(it=>`
+        <div style="padding:12px 0;border-bottom:1px solid var(--line-soft)">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <div class="r-name">${esc(it.name)}</div>
+            <span class="chip off">${esc(it.part||'')}</span>
+          </div>
+          <div class="r-meta" style="margin-top:3px">${esc(it.meta)}</div>
+          ${it.cue?`<div class="muted" style="font-size:13.5px;margin-top:6px">${esc(it.cue)}</div>`:''}
+        </div>`).join('')}
+    </section>`).join('')}
+  <section class="card">
+    <div class="card-label" style="margin-bottom:8px">준비운동 · 마무리 (일요일 제외)</div>
+    ${[...p.warmup,...p.cooldown].map(i=>`<div class="row"><div style="flex:1"><div class="r-name">${esc(i.name)}</div><div class="r-meta">${esc(i.meta)}</div></div></div>`).join('')}
+  </section>`;
+}
+function workLog(){
+  const [y,mo] = state.monthKey.split('-').map(Number);
+  const days = new Date(y,mo,0).getDate();
+  let rows = '';
+  for(let d=days; d>=1; d--){
+    const date = `${y}-${pad2(mo)}-${pad2(d)}`;
+    if(date > TODAY) continue;
+    const rec = state.work[date];
+    const rt = routineFor(date);
+    const pg = (()=>{ const rr=rec||{done:{}}; let t=0,c=0;
+      rt.groups.forEach(g=>g.items.forEach(i=>{t++; if(rr.done[i.id]) c++;})); return {t,c}; })();
+    const done = pg.t>0 && pg.c===pg.t;
+    const shift = Schedule.shiftLabel(Schedule.shiftOf(date));
+    rows += `<div class="row">
+      <div class="tick" style="${done?'background:var(--work);border-color:var(--work);color:#fff':''}">${done?'✓':''}</div>
+      <div style="flex:1">
+        <div class="r-name" style="text-decoration:none;color:var(--ink)">${mo}월 ${d}일 ${DOW[dowOf(date)]} · ${esc(rt.title)}</div>
+        <div class="r-meta">${pg.c}/${pg.t} 완료 · ${shift}</div>
+      </div>
+      <select class="inp" style="width:104px;padding:7px 8px" data-rpe="${date}">
+        <option value="">RPE</option>
+        ${[6,7,8,9,10].map(v=>`<option value="${v}" ${rec&&rec.rpe==v?'selected':''}>${v} ${({6:'여유',7:'적당',8:'빡셈',9:'한계',10:'실패'})[v]}</option>`).join('')}
+      </select>
+    </div>`;
+  }
+  const doneCount = Object.keys(state.work).filter(d=>{
+    const r=routineFor(d), rr=state.work[d]; let t=0,c=0;
+    r.groups.forEach(g=>g.items.forEach(i=>{t++; if(rr.done[i.id]) c++;})); return t>0&&c===t;
+  }).length;
+  return `
+  <section class="card">
+    <div class="card-label" style="margin-bottom:8px">이번 달 완주</div>
+    <div class="big">${doneCount}<span class="unit">회</span></div>
+    <div class="tiny" style="margin-top:6px">RPE는 체감 강도다. 같은 무게에서 RPE가 내려가면 무게를 올릴 때다.</div>
+  </section>
+  <section class="card">${rows || '<div class="muted">아직 이번 달 운동일이 없다. 첫 루틴을 시작하면 여기에 쌓인다.</div>'}</section>`;
+}
+
+/* ============================================================
+   features/budget/view.js
+   ============================================================ */
+function viewMoney(){
+  const s = state.sub.money;
+  const seg = `<div class="seg">
+    ${[['budget','예산'],['close','결산']]
+      .map(([k,l])=>`<button data-sub="money|${k}" aria-current="${s===k}">${l}</button>`).join('')}
+  </div>`;
+  return seg + (s==='close'? moneyClose() : moneyBudget());
+}
+function moneyBudget(){
+  const t = totals();
+  const order = ['fixed','subscription','living','extra'];
+  const catCard = c => {
+    const planned = sumCat(c,'planned');
+    return `
+    <section class="card">
+      <button style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px" data-fold="${c.id}">
+        <div style="text-align:left">
+          <div class="card-label" style="margin:0">${c.emoji} ${esc(c.name)}</div>
+          <div class="tiny" style="margin-top:4px">계획 합계 ${won(planned)}원</div>
+        </div>
+        <span style="color:var(--ink-3)">${c.open?'▾':'▸'}</span>
+      </button>
+      ${c.open? `
+      <div style="margin-top:12px">
+        ${c.items.map(i=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line-soft)">
+            <input class="inp" style="flex:1;border:none;padding:4px 0;font-weight:650" value="${esc(i.name)}" data-rename="${c.id}|${i.id}">
+            <input class="inp num" style="width:112px" type="number" inputmode="numeric" value="${+i.planned||0}" data-amt="planned|${c.id}|${i.id}">
+            <button style="color:var(--ink-3);padding:4px 6px" data-del="${c.id}|${i.id}">✕</button>
+          </div>`).join('')}
+        ${c.items.length===0? `<div class="muted" style="font-size:14px;padding:4px 0 8px">아직 항목이 없다. 계획할 금액을 항목으로 추가해보자.</div>`:''}
+        <button class="btn line full" style="margin-top:12px" data-additem="${c.id}">항목 추가</button>
+      </div>`:''}
+    </section>`;
+  };
+  return `
+  <section class="card" style="background:var(--money);color:#fff">
+    <div class="card-label" style="color:rgba(255,255,255,.75)">이번 달 예산 합계</div>
+    <div class="big" style="margin-top:6px">${won(t.planned)}<span class="unit" style="color:rgba(255,255,255,.75)">원</span></div>
+    <div class="tiny" style="color:rgba(255,255,255,.7);margin-top:10px">카테고리별 계획을 더한 값이다. 실제 사용액과 할인은 결산 탭에서 입력한다.</div>
+  </section>
+  ${order.map(id=>catCard(catById(id))).filter(Boolean).join('')}`;
+}
+function moneyClose(){
+  const t = totals(), netActual = t.actual - t.discount, diff = t.planned - netActual;
+  const order = ['fixed','subscription','living','extra'];
+  const closeCard = c => {
+    const planned = sumCat(c,'planned');
+    return `
+    <section class="card">
+      <div class="card-head">
+        <div class="card-label">${c.emoji} ${esc(c.name)}</div>
+        <div class="tiny">예산 ${won(planned)}원</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <label style="flex:1"><div class="tiny" style="margin-bottom:3px">실제 사용액</div>
+          <input class="inp num" type="number" inputmode="numeric" value="${+c.actual||0}" data-close-amt="actual|${c.id}"></label>
+        <label style="flex:1"><div class="tiny" style="margin-bottom:3px;color:var(--money)">할인</div>
+          <input class="inp num" type="number" inputmode="numeric" value="${+c.discount||0}" data-close-amt="discount|${c.id}"></label>
+      </div>
+      <div class="tiny" style="margin-top:8px">순 사용액 ${won(catNet(c))}원</div>
+    </section>`;
+  };
+  return `
+  <section class="card" style="background:var(--money);color:#fff">
+    <div class="card-label" style="color:rgba(255,255,255,.75)">이번 달 결산</div>
+    <div class="big" style="margin-top:6px">${diff>=0?'+':''}${won(diff)}<span class="unit" style="color:rgba(255,255,255,.75)">원</span></div>
+    <div class="tiny" style="color:rgba(255,255,255,.7);margin-top:10px">예산 ${won(t.planned)}원 · 실제 ${won(netActual)}원 ${diff>=0?'(남김)':'(초과)'}</div>
+  </section>
+  ${order.map(id=>closeCard(catById(id))).filter(Boolean).join('')}
+  <div class="tiny" style="margin:4px 2px 16px">카드·계좌 내역을 보고 월중 언제든 직접 입력하면 된다. 예산 탭의 계획 금액과는 별개로 저장된다.</div>
+  ${prevMonthSummary()}`;
+}
+function prevMonthSummary(){
+  const prev = state.prevBudget;
+  if(!prev) return `<section class="card">
+    <div class="card-label">${state.prevYm.replace('-','년 ')}월 결산</div>
+    <div class="muted" style="margin-top:8px">저장된 예산이 없다. 이번 달 결산을 입력해두면 다음 달에 여기서 비교해볼 수 있다.</div>
+  </section>`;
+  const catA = c => (c.actual!==undefined) ? (+c.actual||0) : sumCat(c,'actual');
+  const catD = c => (c.discount!==undefined) ? (+c.discount||0) : sumCat(c,'discount');
+  const rows = prev.categories.map(c=>({
+    name:c.name, emoji:c.emoji,
+    planned:c.items.reduce((a,i)=>a+(+i.planned||0),0),
+    actual: catA(c) - catD(c)
+  }));
+  const totalPlanned = rows.reduce((a,r)=>a+r.planned,0);
+  const totalActual = rows.reduce((a,r)=>a+r.actual,0);
+  const diff = totalPlanned - totalActual;
+  const maxA = Math.max(1, ...rows.map(r=>r.actual));
+  return `
+  <section class="card">
+    <div class="card-label">${state.prevYm.replace('-','년 ')}월 결산</div>
+    <div class="big" style="margin-top:8px;color:${diff>=0?'var(--money)':'var(--warn)'}">${diff>=0?'+':''}${won(diff)}<span class="unit">원</span></div>
+    <div class="tiny" style="margin-top:6px">계획 ${won(totalPlanned)}원 · 실제 ${won(totalActual)}원 ${diff>=0?'(남김)':'(초과)'}</div>
+  </section>
+  <section class="card">
+    <div class="card-label" style="margin-bottom:12px">카테고리 비중</div>
+    ${rows.map(r=>`
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:650">
+          <span>${r.emoji} ${esc(r.name)}</span><span>${won(r.actual)}원</span>
+        </div>
+        <div class="bar" style="margin-top:6px"><i style="width:${Math.round(r.actual/maxA*100)}%;background:var(--money)"></i></div>
+      </div>`).join('')}
+  </section>`;
+}
+
+/* ============================================================
+   이벤트 위임
+   ============================================================ */
+view.addEventListener('click', async e=>{
+  const el = t => e.target.closest(`[${t}]`);
+  let n;
+
+  if((n=el('data-go'))){ const [tab,sub]=n.dataset.go.split('|'); return go(tab,sub); }
+  if((n=el('data-sub'))){ const [tab,sub]=n.dataset.sub.split('|'); state.openRecipe=null; return go(tab,sub); }
+  if((n=el('data-back'))){ state.openRecipe=null; return render(); }
+
+  /* 식단 */
+  if((n=el('data-recipe'))){ state.openRecipe=n.dataset.recipe; return go('meal','recipe'); }
+  if((n=el('data-mealdone'))){ const s=n.dataset.mealdone; setMeal(TODAY,s,{done:!mealOf(TODAY,s).done}); return render(); }
+  if((n=el('data-pick'))) return pickMenu(TODAY, n.dataset.pick);
+  if((n=el('data-day'))) return pickDay(n.dataset.day);
+  if((n=el('data-cal'))){
+    const [y,m]=state.calMonth.split('-').map(Number); const d=new Date(y,m-1+Number(n.dataset.cal),1);
+    state.calMonth = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+    if(!state.mealCache[state.calMonth]) state.mealCache[state.calMonth] = await DB.get(K.meals(state.calMonth)) || {};
+    return render();
+  }
+  if((n=el('data-timer'))) return startTimer(Number(n.dataset.timer), n.dataset.tid);
+
+  /* 운동 */
+  if((n=el('data-check'))){
+    const rec = workRec(TODAY), id = n.dataset.check;
+    rec.done[id] = !rec.done[id]; saveWork(); return render();
+  }
+  if(el('data-finish')){ closeSheet(); return toastSheet('오늘 루틴 완주', '전부 체크했다. 기록 탭에서 체감 강도(RPE)를 남기면 다음 주 무게를 정하기 쉽다.'); }
+
+  /* 돈 */
+  if((n=el('data-fold'))){ const c=catById(n.dataset.fold); c.open=!c.open; saveBudget(); return render(); }
+  if((n=el('data-del'))){ const [cid,iid]=n.dataset.del.split('|'); const c=catById(cid);
+    c.items = c.items.filter(i=>i.id!==iid); saveBudget(); return render(); }
+  if((n=el('data-additem'))){ const c=catById(n.dataset.additem);
+    c.items.push({id:uid('item'),name:'새 항목',planned:0,actual:0,discount:0}); saveBudget(); return render(); }
+  if(el('data-log')) return logSheet();
+});
+
+view.addEventListener('change', e=>{
+  const t = e.target;
+  if(t.dataset.amt){
+    const [field,cid,iid] = t.dataset.amt.split('|');
+    const it = catById(cid).items.find(i=>i.id===iid);
+    it[field] = Number(t.value)||0; saveBudget(); return render();
+  }
+  if(t.dataset.rename){
+    const [cid,iid] = t.dataset.rename.split('|');
+    catById(cid).items.find(i=>i.id===iid).name = t.value.trim() || '이름 없음';
+    saveBudget(); return;
+  }
+  if(t.dataset.closeAmt){
+    const [field,cid] = t.dataset.closeAmt.split('|');
+    catById(cid)[field] = Number(t.value)||0; saveBudget(); return render();
+  }
+  if(t.dataset.rpe){ workRec(t.dataset.rpe).rpe = t.value? Number(t.value):null; saveWork(); return; }
+  if(t.dataset.weight){ state.settings.weight = Number(t.value)||70; saveSettings(); return render(); }
+});
+
+/* ============================================================
+   시트들
+   ============================================================ */
+function pickMenu(date, slot){
+  openSheet(`<h3>${slot==='lunch'?'점심':'저녁'} 메뉴 고르기</h3>` +
+    MENUS.map(m=>`<button class="opt" data-setmenu="${date}|${slot}|${m.id}"
+      aria-current="${mealOf(date,slot).menuId===m.id}">
+      <span>${m.emoji} ${esc(m.name)}</span>
+      <span class="tiny">단백질 ${m.protein}g · ${m.min}분</span></button>`).join('') +
+    `<button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);
+}
+function pickDay(date){
+  const tracked = Schedule.mealsToday(date);
+  const row = (slot,label)=>{
+    if(!tracked.includes(slot)) return `<div class="opt" style="opacity:.6"><span>${label} · 근무 중 해결</span><span class="tiny">집에서 준비 안 함</span></div>`;
+    const x = mealOf(date,slot), mm = menuById(x.menuId);
+    return `<button class="opt" data-pickday="${date}|${slot}"><span>${label} · ${mm.emoji} ${esc(mm.name)}</span><span class="tiny">바꾸기</span></button>`;
+  };
+  openSheet(`<h3>${fmtDate(date)}</h3>
+    ${row('lunch','점심')}
+    ${row('dinner','저녁')}
+    <button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);
+}
+function logSheet(){
+  const m = todayMealSummary();
+  const trackable = m.tracked.filter(s=>s!=='breakfast');
+  const nextMeal = trackable.find(s=>!m[s].done) || trackable[trackable.length-1];
+  openSheet(`<h3>무엇을 기록할까</h3>
+    <button class="opt" data-quick="meal"><span>🍚 식사 완료</span><span class="tiny">${nextMeal==='lunch'?'점심':nextMeal==='dinner'?'저녁':'아침'}</span></button>
+    <button class="opt" data-quick="work"><span>🏋️ 운동 시작</span><span class="tiny">${routineFor(TODAY).title}</span></button>
+    <button class="opt" data-quick="money"><span>💰 결산 입력</span><span class="tiny">생활비 ${won(livingLeft())}원 남음</span></button>
+    <button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);
+}
+function toastSheet(title, body){
+  openSheet(`<h3>${esc(title)}</h3><div class="muted" style="margin-bottom:14px">${esc(body)}</div>
+    <button class="btn work full" data-close="1">확인</button>`);
+}
+
+$('#sheet').addEventListener('click', e=>{
+  const el = t => e.target.closest(`[${t}]`); let n;
+  if(el('data-close')) return closeSheet();
+  if((n=el('data-setmenu'))){
+    const [date,slot,id]=n.dataset.setmenu.split('|');
+    setMeal(date,slot,{menuId:id,done:false}); closeSheet(); return render();
+  }
+  if((n=el('data-pickday'))){ const [date,slot]=n.dataset.pickday.split('|'); return pickMenu(date,slot); }
+  if((n=el('data-quick'))){
+    const q = n.dataset.quick; closeSheet();
+    if(q==='meal'){
+      const m=todayMealSummary(); const trackable=m.tracked.filter(s=>s!=='breakfast');
+      const next = trackable.find(s=>!m[s].done) || 'breakfast';
+      setMeal(TODAY, next, {done:true}); return go('meal','today');
+    }
+    if(q==='work') return go('work','today');
+    if(q==='money') return go('money','close');
+  }
+});
+
+/* ============================================================
+   app/sync-ui.js — 동기화 배지와 토큰 설정
+   ============================================================ */
+store.subscribe(({pending, error})=>{
+  const b = $('#syncBadge');
+  const text = !syncCfg ? '동기화 꺼짐' : error==='auth' ? '토큰 확인' : pending ? `동기화 대기 ${pending}` : '';
+  b.textContent = text; b.hidden = !text;
+});
+$('#syncBadge').addEventListener('click', ()=>syncSheet());
+function syncSheet(){
+  const c = syncCfg || { repo:'sasaway/life', device:'' };
+  openSheet(`<h3>동기화 설정</h3>
+    <div class="tiny" style="margin-bottom:10px">GitHub 토큰은 이 브라우저에만 저장됩니다.</div>
+    <input id="syncToken" type="password" placeholder="GitHub 토큰 (github_pat_…)" autocomplete="off" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px">
+    <input id="syncRepo" value="${esc(c.repo)}" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px">
+    <input id="syncDevice" value="${esc(c.device)}" placeholder="기기 이름 (예: 폰, PC)" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px">
+    <button class="btn work full" data-sync-save="1">저장하고 다시 열기</button>
+    ${syncCfg?'<button class="btn ghost full" style="margin-top:8px" data-sync-off="1">동기화 끄기</button>':''}
+    <button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);
+}
+$('#sheet').addEventListener('click', e=>{
+  if(e.target.closest('[data-sync-save]')){
+    const token = $('#syncToken').value.trim() || (syncCfg && syncCfg.token);
+    const repo = $('#syncRepo').value.trim(), device = $('#syncDevice').value.trim() || '기기';
+    if(!token || !repo) return;
+    storage.setItem(SYNC_CFG, JSON.stringify({token, repo, device}));
+    return location.reload();
+  }
+  if(e.target.closest('[data-sync-off]')){ storage.removeItem(SYNC_CFG); return location.reload(); }
+});
+window.addEventListener('online', ()=>store.flush());
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible'){ store.flush(); loadAll().then(render); }
+  else store.flush();
+});
+
+/* 시작 */
+(async ()=>{ await loadAll(); render(); })();
+</script>
+</body>
+</html>

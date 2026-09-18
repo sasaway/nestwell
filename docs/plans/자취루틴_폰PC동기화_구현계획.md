@@ -119,7 +119,7 @@ test('commitMessage 형식', () => {
 
 - [ ] **Step 2: 실패 확인**
 
-Run: `cd ~/Documents/Claude/jachwi-routine && node --test tests/`
+Run: `cd ~/Documents/Claude/jachwi-routine && node --test`
 Expected: FAIL — `Cannot find module '../sync.js'`
 
 - [ ] **Step 3: 최소 구현** — `sync.js`
@@ -172,7 +172,7 @@ Expected: FAIL — `Cannot find module '../sync.js'`
 
 - [ ] **Step 4: 통과 확인**
 
-Run: `node --test tests/`
+Run: `node --test`
 Expected: PASS 6/6
 
 - [ ] **Step 5: 커밋**
@@ -333,7 +333,7 @@ test('subscribe 는 pending 변화를 알린다', () => {
 
 - [ ] **Step 2: 실패 확인**
 
-Run: `node --test tests/`
+Run: `node --test`
 Expected: FAIL — `S.createStore is not a function`
 
 - [ ] **Step 3: 구현** — `sync.js` 의 `const LifeSync = …` 줄 바로 위에 추가하고, `LifeSync` 객체에 `createStore` 를 넣는다.
@@ -431,7 +431,7 @@ Expected: FAIL — `S.createStore is not a function`
 
 - [ ] **Step 4: 통과 확인**
 
-Run: `node --test tests/`
+Run: `node --test`
 Expected: PASS 17/17
 
 - [ ] **Step 5: 커밋**
@@ -486,7 +486,7 @@ test('githubApi: 실패 상태 코드를 status 로', async () => {
 
 - [ ] **Step 2: 실패 확인**
 
-Run: `node --test tests/`
+Run: `node --test`
 Expected: FAIL — `S.githubApi is not a function`
 
 - [ ] **Step 3: 구현** — `createStore` 아래에 추가, `LifeSync` 에 `githubApi` 추가
@@ -524,7 +524,7 @@ Expected: FAIL — `S.githubApi is not a function`
 
 - [ ] **Step 4: 통과 확인**
 
-Run: `node --test tests/`
+Run: `node --test`
 Expected: PASS 19/19
 
 - [ ] **Step 5: 커밋**
@@ -540,7 +540,7 @@ git commit -m "feat(sync): GitHub Contents API 클라이언트"
 
 **Files:**
 - Create: `index.html` (← `~/Downloads/자취루틴_통합앱_v6.html` 복사 후 수정)
-- Create: `.claude/launch.json` (미리보기 서버)
+- Modify: `~/Documents/Claude/.claude/launch.json` (미리보기 서버 `jachwi` 추가 — 세션 루트의 설정 파일만 읽힌다)
 - Modify: `docs/specs/자취루틴_폰PC동기화_설계서.md` 5장 마지막 줄
 
 **Interfaces:**
@@ -648,13 +648,13 @@ document.addEventListener('visibilitychange', ()=>{
 - v3 1회성 초기화(`migrateWorkReset`)는 삭제한다. 이미 끝난 작업이고, 새 기기에서 원격을 받기 전에 돌면 운동 기록을 지운 채 올릴 위험이 있다.
 ```
 
-- [ ] **Step 8: 미리보기 설정** — `.claude/launch.json`
+- [ ] **Step 8: 미리보기 설정** — `~/Documents/Claude/.claude/launch.json` 의 configurations 에 추가 (`--directory jachwi-routine`)
 
 ```json
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "jachwi", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "5173"], "port": 5173 }
+    { "name": "jachwi", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "5173", "--directory", "jachwi-routine"], "port": 5173 }
   ]
 }
 ```
@@ -672,7 +672,7 @@ document.addEventListener('visibilitychange', ()=>{
 - [ ] **Step 10: 커밋**
 
 ```bash
-git add index.html .claude/launch.json docs/specs/자취루틴_폰PC동기화_설계서.md
+git add index.html docs/specs/자취루틴_폰PC동기화_설계서.md
 git commit -m "feat(app): v6 저장 계층을 sync.js 로 교체, 동기화 배지·설정"
 ```
 
@@ -717,7 +717,7 @@ test('21시 이후 미완료면 홈에서 알린다', () => {
 
 - [ ] **Step 2: 실패 확인**
 
-Run: `node --test tests/`
+Run: `node --test`
 Expected: FAIL — `Cannot find module '../review.js'`
 
 - [ ] **Step 3: 구현** — `review.js`
@@ -743,7 +743,7 @@ Expected: FAIL — `Cannot find module '../review.js'`
 
 - [ ] **Step 4: 통과 확인**
 
-Run: `node --test tests/`
+Run: `node --test`
 Expected: PASS 23/23
 
 - [ ] **Step 5: index.html 연결**

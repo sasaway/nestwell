@@ -42,3 +42,132 @@ test('commitMessage 형식', () => {
   assert.equal(S.commitMessage('app/budget/2026-09.json', [], '폰'), 'budget 2026-09 · 폰');
   assert.equal(S.commitMessage('app/settings.json', [], '폰'), 'settings · 폰');
 });
+
+function memStorage() {
+  const m = new Map();
+  return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) };
+}
+function fakeApi() {
+  const files = new Map(); let sha = 0;
+  const api = {
+    files, puts: [], failPut: [],            // failPut: 차례로 던질 상태 코드
+    async getFile(p) { return files.has(p) ? { json: structuredClone(files.get(p).json), sha: files.get(p).sha } : null; },
+    async putFile(p, json, s, message) {
+      const code = api.failPut.shift();
+      if (code !== undefined) { const e = new Error('fail'); if (code) e.status = code; throw e; }
+      const cur = files.get(p);
+      if ((cur && cur.sha) !== (s || undefined) && !(cur == null && s == null)) { const e = new Error('sha'); e.status = 409; throw e; }
+      files.set(p, { json: structuredClone(json), sha: 's' + ++sha });
+      api.puts.push({ p, json, message });
+    },
+  };
+  return api;
+}
+const MEALS = 'living-routine:v1:meals:2026-09';
+const mk = (api, storage = memStorage()) =>
+  S.createStore({ api, storage, device: '폰', setTimer: () => 0, clearTimer: () => {} });
+
+test('set → flush: 파일로 커밋하고 대기열을 비운다', async () => {
+  const api = fakeApi(); const st = mk(api);
+  st.set(MEALS, { '2026-09-18': { lunch: { done: true } } });
+  assert.equal(st.pending(), 1);
+  await st.flush();
+  assert.equal(st.pending(), 0);
+  assert.deepEqual(api.files.get('app/meals/2026-09.json').json, { '2026-09-18': { lunch: { done: true } } });
+  assert.equal(api.puts[0].message, 'meals 2026-09-18 · 폰');
+});
+
+test('다른 기기가 먼저 쓴 날짜를 지우지 않는다', async () => {
+  const api = fakeApi();
+  api.files.set('app/meals/2026-09.json', { json: { '2026-09-17': 'PC' }, sha: 's0' });
+  const st = mk(api);
+  st.set(MEALS, { '2026-09-18': '폰' });          // 폰 캐시에는 17일이 없다
+  await st.flush();
+  assert.deepEqual(api.files.get('app/meals/2026-09.json').json, { '2026-09-17': 'PC', '2026-09-18': '폰' });
+});
+
+test('sha 불일치(409)면 다시 받아 병합하고 재시도', async () => {
+  const api = fakeApi(); api.failPut = [409];
+  const st = mk(api);
+  st.set(MEALS, { a: 1 });
+  await st.flush();
+  assert.equal(api.puts.length, 1);
+  assert.equal(st.pending(), 0);
+});
+
+test('3번 실패하면 대기열에 남긴다', async () => {
+  const api = fakeApi(); api.failPut = [409, 409, 409];
+  const st = mk(api);
+  st.set(MEALS, { a: 1 });
+  await st.flush();
+  assert.equal(st.pending(), 1);
+});
+
+test('네트워크 오류면 멈추고 대기열 유지, 다음 flush 에 보낸다', async () => {
+  const api = fakeApi(); api.failPut = [0];      // 0 → status 없는 오류
+  const st = mk(api);
+  st.set(MEALS, { a: 1 });
+  await st.flush();
+  assert.equal(st.pending(), 1);
+  assert.equal(st.error(), 'network');
+  await st.flush();
+  assert.equal(st.pending(), 0);
+  assert.equal(st.error(), null);
+});
+
+test('401 이면 error() 가 auth', async () => {
+  const api = fakeApi(); api.failPut = [401];
+  const st = mk(api);
+  st.set(MEALS, { a: 1 });
+  await st.flush();
+  assert.equal(st.error(), 'auth');
+});
+
+test('대기열은 새로고침(새 store) 뒤에도 남는다', async () => {
+  const storage = memStorage(); const api = fakeApi();
+  mk(null, storage).set(MEALS, { a: 1 });        // 동기화 꺼진 상태에서 입력
+  const st2 = mk(api, storage);
+  assert.equal(st2.pending(), 1);
+  await st2.flush();
+  assert.deepEqual(api.files.get('app/meals/2026-09.json').json, { a: 1 });
+});
+
+test('flush 도중 새 입력은 잃지 않는다', async () => {
+  const api = fakeApi(); const st = mk(api);
+  st.set(MEALS, { a: 1 });
+  const orig = api.putFile;
+  api.putFile = async (...args) => { st.set(MEALS, { a: 1, b: 2 }); api.putFile = orig; return orig(...args); };
+  await st.flush();
+  assert.equal(st.pending(), 1);
+  await st.flush();
+  assert.deepEqual(api.files.get('app/meals/2026-09.json').json, { a: 1, b: 2 });
+});
+
+test('같은 값 set 은 대기열에 넣지 않는다', () => {
+  const st = mk(fakeApi());
+  st.set(MEALS, { a: 1 }); st.set(MEALS, { a: 1 });
+  assert.equal(st.pending(), 1);
+});
+
+test('get: 캐시가 있으면 바로, 없으면 원격을 기다린다', async () => {
+  const api = fakeApi();
+  api.files.set('app/settings.json', { json: { weight: 61 }, sha: 's0' });
+  const storage = memStorage();
+  const st = mk(api, storage);
+  assert.deepEqual(await st.get('living-routine:v1:settings'), { weight: 61 });
+  api.files.set('app/settings.json', { json: { weight: 62 }, sha: 's1' });
+  let changed = null;
+  const st2 = S.createStore({ api, storage, device: '폰', onRemoteChange: k => { changed = k; }, setTimer: () => 0, clearTimer: () => {} });
+  assert.deepEqual(await st2.get('living-routine:v1:settings'), { weight: 61 });   // 캐시 먼저
+  await new Promise(r => setTimeout(r, 0));
+  assert.equal(changed, 'living-routine:v1:settings');
+  assert.deepEqual(await st2.get('living-routine:v1:settings'), { weight: 62 });
+  assert.equal(await mk(null).get('living-routine:v1:budget:2026-09'), null);
+});
+
+test('subscribe 는 pending 변화를 알린다', () => {
+  const st = mk(fakeApi()); const seen = [];
+  st.subscribe(s => seen.push(s.pending));
+  st.set(MEALS, { a: 1 });
+  assert.deepEqual(seen, [0, 1]);
+});

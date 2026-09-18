@@ -176,6 +176,7 @@ nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
 <script src="sync.js"></script>
+<script src="review.js"></script>
 
 <script>
 /* ============================================================
@@ -554,6 +555,7 @@ const state = {
   calMonth: ymOf(TODAY),
   meals:{}, mealCache:{},
   work:{},
+  review:{},
   budget:{ categories: budgetTemplate(), log:[] },
   prevBudget:null,
   openRecipe:null
@@ -564,6 +566,7 @@ async function loadAll(){
   state.meals = await DB.get(K.meals(state.monthKey)) || {};
   state.mealCache[state.monthKey] = state.meals;
   state.work  = await DB.get(K.work(state.monthKey)) || {};
+  state.review = await DB.get(K.review(state.monthKey)) || {};
   const b = await DB.get(K.money(state.monthKey));
   if(b) state.budget = b;
   const [y,m] = state.monthKey.split('-').map(Number);
@@ -575,6 +578,7 @@ const saveSettings = () => DB.set(K.settings, state.settings);
 const saveMeals    = () => DB.set(K.meals(state.monthKey), state.meals);
 const saveWork     = () => DB.set(K.work(state.monthKey), state.work);
 const saveBudget   = () => DB.set(K.money(state.monthKey), state.budget);
+const saveReview   = () => DB.set(K.review(state.monthKey), state.review);
 
 
 /* ============================================================
@@ -799,6 +803,12 @@ function viewHome(){
     <button class="btn money full" style="margin-top:12px" data-go="money|close">결산에서 입력</button>
   </section>
 
+  ${LifeReview.shouldNudge(state.review[TODAY], nowHM()) ? `
+  <section class="card">
+    <div class="card-head"><div class="card-label">📝 오늘 회고</div></div>
+    <div class="tiny">네 가지만 답하면 끝나요</div>
+    <button class="btn line full" style="margin-top:10px" data-review-open="1">회고 쓰기</button>
+  </section>` : ''}
   <button class="btn ghost full" style="margin-top:4px;padding:15px" data-log="1">+ 기록</button>`;
 }
 
@@ -1234,6 +1244,7 @@ view.addEventListener('click', async e=>{
   if((n=el('data-additem'))){ const c=catById(n.dataset.additem);
     c.items.push({id:uid('item'),name:'새 항목',planned:0,actual:0,discount:0}); saveBudget(); return render(); }
   if(el('data-log')) return logSheet();
+  if(el('data-review-open')) return reviewSheet(0);
 });
 
 view.addEventListener('change', e=>{
@@ -1287,6 +1298,7 @@ function logSheet(){
     <button class="opt" data-quick="meal"><span>🍚 식사 완료</span><span class="tiny">${nextMeal==='lunch'?'점심':nextMeal==='dinner'?'저녁':'아침'}</span></button>
     <button class="opt" data-quick="work"><span>🏋️ 운동 시작</span><span class="tiny">${routineFor(TODAY).title}</span></button>
     <button class="opt" data-quick="money"><span>💰 결산 입력</span><span class="tiny">생활비 ${won(livingLeft())}원 남음</span></button>
+    <button class="opt" data-quick="review"><span>📝 오늘 회고</span><span class="tiny">${LifeReview.isComplete(state.review[TODAY])?'작성함':'네 가지 질문'}</span></button>
     <button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);
 }
 function toastSheet(title, body){
@@ -1311,6 +1323,7 @@ $('#sheet').addEventListener('click', e=>{
     }
     if(q==='work') return go('work','today');
     if(q==='money') return go('money','close');
+    if(q==='review') return reviewSheet(0);
   }
 });
 
@@ -1348,6 +1361,42 @@ window.addEventListener('online', ()=>store.flush());
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState==='visible'){ store.flush(); loadAll().then(render); }
   else store.flush();
+});
+
+/* ============================================================
+   features/review/view.js — 오늘 회고 (질문 하나씩)
+   ============================================================ */
+function reviewSheet(i){
+  const Q = LifeReview.QUESTIONS[i], rec = state.review[TODAY] || {};
+  openSheet(`<h3>${esc(Q.q)}</h3>
+    <div class="tiny" style="margin-bottom:8px">${i+1} / ${LifeReview.QUESTIONS.length}</div>
+    <textarea id="reviewInput" rows="4" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font:inherit">${esc(rec[Q.id]||'')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      ${i>0?`<button class="btn ghost" data-review-go="${i-1}">이전</button>`:''}
+      <button class="btn line" data-review-none="${i}">없음</button>
+      <button class="btn work" style="flex:1" data-review-next="${i}">${i<LifeReview.QUESTIONS.length-1?'다음':'저장'}</button>
+    </div>`);
+  setTimeout(()=>{ const t=$('#reviewInput'); if(t) t.focus(); }, 50);
+}
+function saveReviewAnswer(i, value){
+  if(!LifeReview.isEditable(TODAY, ymd(new Date()))){
+    toastSheet('날짜가 바뀌었어요', '지난 회고는 고칠 수 없어요. 앱을 새로 열어 주세요.');
+    return false;
+  }
+  const id = LifeReview.QUESTIONS[i].id;
+  state.review[TODAY] = { ...(state.review[TODAY]||{}), [id]: value, savedAt: new Date().toISOString() };
+  saveReview();
+  return true;
+}
+$('#sheet').addEventListener('click', e=>{
+  const n = e.target.closest('[data-review-next],[data-review-none],[data-review-go]');
+  if(!n) return;
+  if(n.dataset.reviewGo !== undefined) return reviewSheet(+n.dataset.reviewGo);
+  const i = +(n.dataset.reviewNext ?? n.dataset.reviewNone);
+  const value = n.dataset.reviewNone !== undefined ? '없음' : $('#reviewInput').value;
+  if(!saveReviewAnswer(i, value)) return;
+  if(i < LifeReview.QUESTIONS.length-1) return reviewSheet(i+1);
+  closeSheet(); render();
 });
 
 /* 시작 */

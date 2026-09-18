@@ -120,7 +120,32 @@
     };
   }
 
-  const LifeSync = { pathForKey, isDateKeyed, diffKeys, mergeDoc, commitMessage, createStore };
+  function githubApi({ token, repo, fetchImpl = (...a) => fetch(...a) }) {
+    const base = `https://api.github.com/repos/${repo}/contents/`;
+    const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    const toB64 = s => { let bin = ''; new TextEncoder().encode(s).forEach(b => { bin += String.fromCharCode(b); }); return btoa(bin); };
+    const fromB64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0)));
+
+    async function call(path, init = {}) {
+      const res = await fetchImpl(base + encodeURI(path), { ...init, headers, cache: 'no-store' });
+      if (res.status === 404) return null;
+      if (!res.ok) { const e = new Error(`GitHub ${res.status}`); e.status = res.status; throw e; }
+      return res.json();
+    }
+    return {
+      async getFile(path) {
+        const r = await call(path);
+        return r && { sha: r.sha, json: JSON.parse(fromB64(r.content)) };
+      },
+      async putFile(path, json, sha, message) {
+        const body = { message, content: toB64(JSON.stringify(json, null, 2) + '\n') };
+        if (sha) body.sha = sha;
+        await call(path, { method: 'PUT', body: JSON.stringify(body) });
+      },
+    };
+  }
+
+  const LifeSync = { pathForKey, isDateKeyed, diffKeys, mergeDoc, commitMessage, createStore, githubApi };
   if (typeof module !== 'undefined' && module.exports) module.exports = LifeSync;
   else root.LifeSync = LifeSync;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

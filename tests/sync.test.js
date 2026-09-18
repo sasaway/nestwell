@@ -171,3 +171,31 @@ test('subscribe 는 pending 변화를 알린다', () => {
   st.set(MEALS, { a: 1 });
   assert.deepEqual(seen, [0, 1]);
 });
+
+test('githubApi: 한글 JSON 을 base64 로 주고받고, 404 는 null', async () => {
+  const calls = [];
+  const stored = {};
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    const path = decodeURI(url.split('/contents/')[1]);
+    if (init.method === 'PUT') { stored[path] = JSON.parse(init.body); return { ok: true, status: 201, json: async () => ({}) }; }
+    if (!stored[path]) return { ok: false, status: 404, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => ({ sha: 'abc', content: stored[path].content.replace(/(.{60})/g, '$1\n') }) };
+  };
+  const gh = S.githubApi({ token: 'T', repo: 'sasaway/life', fetchImpl });
+  assert.equal(await gh.getFile('app/meals/2026-09.json'), null);
+  await gh.putFile('app/meals/2026-09.json', { '2026-09-18': { memo: '대패짜글이' } }, null, 'meals 2026-09-18 · 폰');
+  const body = JSON.parse(calls[1].init.body);
+  assert.equal(body.message, 'meals 2026-09-18 · 폰');
+  assert.equal(body.sha, undefined);
+  assert.equal(calls[1].init.headers.Authorization, 'Bearer T');
+  assert.equal(calls[1].init.cache, 'no-store');
+  assert.equal(calls[1].url, 'https://api.github.com/repos/sasaway/life/contents/app/meals/2026-09.json');
+  const got = await gh.getFile('app/meals/2026-09.json');
+  assert.deepEqual(got, { sha: 'abc', json: { '2026-09-18': { memo: '대패짜글이' } } });
+});
+
+test('githubApi: 실패 상태 코드를 status 로', async () => {
+  const gh = S.githubApi({ token: 'T', repo: 'r/r', fetchImpl: async () => ({ ok: false, status: 409, json: async () => ({}) }) });
+  await assert.rejects(gh.putFile('app/settings.json', {}, 'x', 'm'), e => e.status === 409);
+});

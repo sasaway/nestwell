@@ -1,4 +1,4 @@
-/* sync.js — 자취루틴 저장을 localStorage 캐시 + GitHub(sasaway/life) 로 동기화한다.
+/* sync.js — Nestwell 저장을 localStorage 캐시 + GitHub(sasaway/life) 로 동기화한다.
    브라우저: window.LifeSync / Node(테스트): module.exports */
 (function (root) {
   const PREFIX = 'living-routine:v1:';

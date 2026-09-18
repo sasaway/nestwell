@@ -1,19 +1,19 @@
-# 자취루틴 폰·PC 동기화 구현 계획
+# Nestwell 폰·PC 동기화 구현 계획
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 자취루틴 v6 앱의 모든 입력을 비공개 GitHub 저장소 `sasaway/life`(= Mac 의 `~/life`)에 커밋으로 남기고, 매일 밤 회고 기록·폴더 정리·다음날 준비를 자동으로 돌린다.
+**Goal:** Nestwell v6 앱의 모든 입력을 비공개 GitHub 저장소 `sasaway/life`(= Mac 의 `~/life`)에 커밋으로 남기고, 매일 밤 회고 기록·폴더 정리·다음날 준비를 자동으로 돌린다.
 
-**Architecture:** v6 단일 HTML 의 `DB` 객체 안쪽을 `sync.js`(localStorage 캐시 + GitHub Contents API 전송 대기열)로 바꾼다. 앱은 GitHub Pages(공개 저장소 `sasaway/jachwi-routine`, 코드만)에서 돌고, 폰·PC 가 같은 비공개 저장소에 쓴다. Mac 은 launchd 로 밤마다 `~/life/tools/nightly.sh` 를 돌려 pull → 회고 md → 정리 → commit·push 한다.
+**Architecture:** v6 단일 HTML 의 `DB` 객체 안쪽을 `sync.js`(localStorage 캐시 + GitHub Contents API 전송 대기열)로 바꾼다. 앱은 GitHub Pages(공개 저장소 `sasaway/nestwell`, 코드만)에서 돌고, 폰·PC 가 같은 비공개 저장소에 쓴다. Mac 은 launchd 로 밤마다 `~/life/tools/nightly.sh` 를 돌려 pull → 회고 md → 정리 → commit·push 한다.
 
 **Tech Stack:** HTML + 바닐라 JS(빌드 없음), Node 24 `node:test`(테스트 전용, 의존성 없음), Python 3.14 표준 라이브러리, bash, launchd, gh CLI.
 
-**Spec:** `docs/specs/자취루틴_폰PC동기화_설계서.md`
+**Spec:** `docs/specs/Nestwell_폰PC동기화_설계서.md`
 
 ## Global Constraints
 
 - 앱은 `app/**` 만 쓴다. 밤 작업·스킬은 `app/` 밖만 쓴다. 밤 작업은 `app/` 을 읽기만 한다.
-- 저장소: `sasaway/jachwi-routine`(공개, 코드만), `sasaway/life`(비공개, `~/life` 전체).
+- 저장소: `sasaway/nestwell`(공개, 코드만), `sasaway/life`(비공개, `~/life` 전체).
 - 토큰: fine-grained PAT, 대상 `sasaway/life` 하나, `Contents: Read and write` 만. 브라우저 `localStorage` 에만 저장. 코드·저장소·채팅에 넣지 않는다.
 - `.gitignore`(life): `inbox/mail/`, `tools/nightly.log`, `tools/nightly.err`, `__pycache__/`, `.DS_Store`.
 - 데이터 파일: JSON, 2칸 들여쓰기, 끝에 줄바꿈. 경로 = `app/settings.json`, `app/{meals|workouts|budget|review}/YYYY-MM.json`.
@@ -35,7 +35,7 @@
 
 ## 파일 구조
 
-**앱 저장소** `~/Documents/Claude/jachwi-routine/` (→ `sasaway/jachwi-routine`)
+**앱 저장소** `~/Documents/Claude/nestwell/` (→ `sasaway/nestwell`)
 
 | 파일 | 책임 |
 |---|---|
@@ -119,13 +119,13 @@ test('commitMessage 형식', () => {
 
 - [ ] **Step 2: 실패 확인**
 
-Run: `cd ~/Documents/Claude/jachwi-routine && node --test`
+Run: `cd ~/Documents/Claude/nestwell && node --test`
 Expected: FAIL — `Cannot find module '../sync.js'`
 
 - [ ] **Step 3: 최소 구현** — `sync.js`
 
 ```js
-/* sync.js — 자취루틴 저장을 localStorage 캐시 + GitHub(sasaway/life) 로 동기화한다.
+/* sync.js — Nestwell 저장을 localStorage 캐시 + GitHub(sasaway/life) 로 동기화한다.
    브라우저: window.LifeSync / Node(테스트): module.exports */
 (function (root) {
   const PREFIX = 'living-routine:v1:';
@@ -540,8 +540,8 @@ git commit -m "feat(sync): GitHub Contents API 클라이언트"
 
 **Files:**
 - Create: `index.html` (← `~/Downloads/자취루틴_통합앱_v6.html` 복사 후 수정)
-- Modify: `~/Documents/Claude/.claude/launch.json` (미리보기 서버 `jachwi` 추가 — 세션 루트의 설정 파일만 읽힌다)
-- Modify: `docs/specs/자취루틴_폰PC동기화_설계서.md` 5장 마지막 줄
+- Modify: `~/Documents/Claude/.claude/launch.json` (미리보기 서버 `nestwell` 추가 — 세션 루트의 설정 파일만 읽힌다)
+- Modify: `docs/specs/Nestwell_폰PC동기화_설계서.md` 5장 마지막 줄
 
 **Interfaces:**
 - Consumes: `LifeSync.createStore`, `LifeSync.githubApi` (Task 2·3)
@@ -551,7 +551,7 @@ git commit -m "feat(sync): GitHub Contents API 클라이언트"
 - [ ] **Step 1: v6 복사**
 
 ```bash
-cp ~/Downloads/자취루틴_통합앱_v6.html ~/Documents/Claude/jachwi-routine/index.html
+cp ~/Downloads/자취루틴_통합앱_v6.html ~/Documents/Claude/nestwell/index.html
 ```
 
 - [ ] **Step 2: 스크립트 로드** — `<div class="sheet" id="sheet"></div>` 다음 줄, 기존 `<script>` 앞에 추가
@@ -648,20 +648,20 @@ document.addEventListener('visibilitychange', ()=>{
 - v3 1회성 초기화(`migrateWorkReset`)는 삭제한다. 이미 끝난 작업이고, 새 기기에서 원격을 받기 전에 돌면 운동 기록을 지운 채 올릴 위험이 있다.
 ```
 
-- [ ] **Step 8: 미리보기 설정** — `~/Documents/Claude/.claude/launch.json` 의 configurations 에 추가 (`--directory jachwi-routine`)
+- [ ] **Step 8: 미리보기 설정** — `~/Documents/Claude/.claude/launch.json` 의 configurations 에 추가 (`--directory nestwell`)
 
 ```json
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "jachwi", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "5173", "--directory", "jachwi-routine"], "port": 5173 }
+    { "name": "nestwell", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "5173", "--directory", "nestwell"], "port": 5173 }
   ]
 }
 ```
 
 - [ ] **Step 9: 브라우저 확인(동기화 꺼진 상태)**
 
-`preview_start {name:"jachwi"}` → `http://localhost:5173/`
+`preview_start {name:"nestwell"}` → `http://localhost:5173/`
 확인:
 1. 콘솔 오류 없음 (`read_console_messages onlyErrors`)
 2. 헤더에 `동기화 꺼짐` 배지
@@ -672,7 +672,7 @@ document.addEventListener('visibilitychange', ()=>{
 - [ ] **Step 10: 커밋**
 
 ```bash
-git add index.html docs/specs/자취루틴_폰PC동기화_설계서.md
+git add index.html docs/specs/Nestwell_폰PC동기화_설계서.md
 git commit -m "feat(app): v6 저장 계층을 sync.js 로 교체, 동기화 배지·설정"
 ```
 
@@ -840,7 +840,7 @@ $('#sheet').addEventListener('click', e=>{
 
 - [ ] **Step 6: 브라우저 확인**
 
-`preview_start {name:"jachwi"}` 후 새로고침.
+`preview_start {name:"nestwell"}` 후 새로고침.
 1. `+ 기록` → `📝 오늘 회고` → 질문 1/4 → 입력 → 다음 … 4/4 `없음` → 시트 닫힘
 2. `javascript_tool`: `JSON.parse(localStorage.getItem('lifesync:cache:living-routine:v1:review:' + new Date().toISOString().slice(0,7)))` 에 오늘 날짜로 네 칸, `tomorrow: "없음"`
 3. `+ 기록` 시트에 `작성함` 표시
@@ -882,7 +882,7 @@ Expected: `~/life` 는 폴더, `~/Documents/Claude/life -> /Users/younghyun/life
 
 ```markdown
 `~/life` 가 실제 폴더다(`~/Documents/Claude/life` 는 링크). 비공개 저장소 `sasaway/life` 와 같다. 다섯 스킬이 모두 `~/life/...` 를 읽는다.
-앱(자취루틴)은 `app/` 아래만 쓴다. 여기서는 `app/` 을 고치지 않는다.
+앱(Nestwell)은 `app/` 아래만 쓴다. 여기서는 `app/` 을 고치지 않는다.
 ```
 
 - [ ] **Step 3: git 시작 + .gitignore**
@@ -1109,7 +1109,7 @@ Expected: PASS 7/7
 
 ```bash
 cd ~/life && git add tools/routine.json tools/gen_routine.py tools/tests/test_gen_routine.py
-git commit -m "feat(tools): 자취루틴 일정에 근무 시간 추가"
+git commit -m "feat(tools): Nestwell 일정에 근무 시간 추가"
 ```
 
 ---
@@ -1118,7 +1118,7 @@ git commit -m "feat(tools): 자취루틴 일정에 근무 시간 추가"
 
 **Files:**
 - Create: `~/life/tools/nightly.sh`, `~/life/tools/kr.life.nightly.plist`
-- Modify: `~/Documents/Claude/jachwi-routine/docs/specs/자취루틴_폰PC동기화_설계서.md` 7장 3단계
+- Modify: `~/Documents/Claude/nestwell/docs/specs/Nestwell_폰PC동기화_설계서.md` 7장 3단계
 - Modify: `~/life/CLAUDE.md` (밤 작업 절 추가)
 
 **Interfaces:**
@@ -1197,7 +1197,7 @@ cat ~/life/review/$(date +%F).md
 ls ~/life/inbox/tasks/
 ```
 
-Expected: 로그에 `회고 내보냄 1`, `생성: … 자취루틴_<내일>.md`, `커밋`; md 에 `- 테스트` 와 `- 없음` 세 번; push 줄은 없음(원격 없음).
+Expected: 로그에 `회고 내보냄 1`, `생성: … Nestwell_<내일>.md`, `커밋`; md 에 `- 테스트` 와 `- 없음` 세 번; push 줄은 없음(원격 없음).
 
 되돌리기:
 
@@ -1225,7 +1225,7 @@ cd ~/life && git rm -rq app review/$(date +%F).md && git commit -q -m "chore: �
 
 ```bash
 cd ~/life && git add tools/nightly.sh tools/kr.life.nightly.plist CLAUDE.md && git commit -m "feat(tools): 밤 작업 스크립트와 launchd 정의"
-cd ~/Documents/Claude/jachwi-routine && git add docs/specs && git commit -m "docs: 주간 요약을 데스크톱 예약 작업으로"
+cd ~/Documents/Claude/nestwell && git add docs/specs && git commit -m "docs: 주간 요약을 데스크톱 예약 작업으로"
 ```
 
 ---
@@ -1239,18 +1239,18 @@ cd ~/Documents/Claude/jachwi-routine && git add docs/specs && git commit -m "doc
 - [ ] **Step 1: ★ 앱 저장소 만들기 + 올리기** (공개 전 `git ls-files` 로 데이터·토큰이 없는지 확인)
 
 ```bash
-cd ~/Documents/Claude/jachwi-routine && git ls-files
-gh repo create sasaway/jachwi-routine --public --source=. --push
+cd ~/Documents/Claude/nestwell && git ls-files
+gh repo create sasaway/nestwell --public --source=. --push
 ```
 
 - [ ] **Step 2: ★ GitHub Pages 켜기**
 
 ```bash
-gh api -X POST repos/sasaway/jachwi-routine/pages -f "source[branch]=main" -f "source[path]=/"
-gh api repos/sasaway/jachwi-routine/pages --jq .html_url
+gh api -X POST repos/sasaway/nestwell/pages -f "source[branch]=main" -f "source[path]=/"
+gh api repos/sasaway/nestwell/pages --jq .html_url
 ```
 
-Expected: `https://sasaway.github.io/jachwi-routine/` (첫 배포는 1~2분)
+Expected: `https://sasaway.github.io/nestwell/` (첫 배포는 1~2분)
 
 - [ ] **Step 3: ★ life 비공개 저장소 만들기 + 올리기**
 
@@ -1279,7 +1279,7 @@ Expected: 로그에 `시작`…`push 완료`…`끝`. `Operation not permitted` 
 
 - [ ] **Step 7: 종단 확인**
 
-1. 폰에서 `https://sasaway.github.io/jachwi-routine/` → 토큰 입력 → 식단 끼니 체크
+1. 폰에서 `https://sasaway.github.io/nestwell/` → 토큰 입력 → 식단 끼니 체크
 2. `gh api repos/sasaway/life/commits --jq '.[0].commit.message'` → `meals YYYY-MM-DD · 폰`
 3. PC 브라우저에서 같은 주소 → 같은 체크가 보임
 4. 폰에서 비행기 모드 → 운동 한 종목 체크 → 배지 `동기화 대기 1` → 비행기 모드 해제 → 배지 사라짐 → 커밋 확인

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#EDF0EC">
-<title>자취루틴</title>
+<title>Nestwell</title>
 <style>
 /* ============================================================
    tokens.css — 색 / 간격 / 글꼴
@@ -160,7 +160,7 @@ nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
 <div id="app">
   <header class="top" id="top">
     <div>
-      <div class="top-title" id="topTitle">자취루틴</div>
+      <div class="top-title" id="topTitle">Nestwell</div>
       <div class="top-sub" id="topSub"></div>
     </div>
     <button class="chip off" id="syncBadge" hidden></button>
@@ -681,7 +681,7 @@ const $ = s => document.querySelector(s);
 const view = $('#view');
 
 const TITLES = {
-  home:['자취루틴', () => `${fmtDate(TODAY)} · ${Schedule.shiftLabel(Schedule.shiftOf(TODAY))}`],
+  home:['Nestwell', () => `${fmtDate(TODAY)} · ${Schedule.shiftLabel(Schedule.shiftOf(TODAY))}`],
   meal:['식단', () => {
     if(Schedule.isOffDay(TODAY)) return '오늘은 휴무 — 세 끼 모두 관리';
     return Schedule.shiftOf(TODAY)==='open' ? '점심은 근무 중 해결' : '저녁은 근무 중 해결';

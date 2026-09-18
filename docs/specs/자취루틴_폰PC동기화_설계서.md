@@ -98,7 +98,7 @@ v6 저장 키 ↔ 저장소 경로를 1:1로 맞춘다. JSON, 2칸 들여쓰기,
    - **오늘·어제** 날짜는 매번 다시 쓴다(아직 고칠 수 있었던 날이라 23:30 뒤에 쓴 내용까지 반영).
    - **그보다 오래된** 날짜는 파일이 없을 때만 쓴다(지난 기록을 고치지 않는다).
    - 미래 날짜는 무시한다.
-3. 일요일에만: `claude -p "이번 주 정리해줘"` (review-agent → `review/_week/YYYY-Www.md`). `claude` 가 없거나 실패하면 이 단계만 건너뛰고 로그.
+3. 일요일 주간 요약은 이 스크립트가 아니라 **Claude 데스크톱 앱 예약 작업**(매주 일 23:45, 작업 폴더 `~/life`, 프롬프트 "이번 주 정리해줘")이 한다. 이 Mac 에는 `claude` CLI 가 없다.
 4. `python3 tools/sort_drop.py` → `python3 tools/gen_routine.py --date <내일>`.
    `gen_routine.py` 에 v6 근무 시간 반영: 오픈 08:30–15:30, 마감 15:00–22:00 (휴무일 제외).
 5. 변경이 있으면 `git add -A && git commit -m "nightly YYYY-MM-DD" && git push`. push 실패는 로그만(다음 밤에 함께 올라간다).

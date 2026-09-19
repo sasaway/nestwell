@@ -266,7 +266,7 @@ const nowHM = () => { const d=new Date(); return pad2(d.getHours())+':'+pad2(d.g
    app/schedule.js — 격주 오픈/마감 시프트 엔진
    기준: 2026-09-14(월) = 오픈반 시작 주. 2주 주기로 오픈↔마감 반복.
    오픈반 주 휴무 = 수요일 / 마감반 주 휴무 = 일요일 (은월 확인 완료)
-   운동은 매일 하되 강도가 요일마다 다르다(PLANS 참고) — 그래서 시간표는
+   운동은 월~토에 하고 일요일은 쉰다(PLANS 참고) — 그래서 시간표는
    '몇 시에 운동하는지'만 정하고, '무엇을 얼마나'는 PLANS가 정한다.
    슬롯은 오픈반 16:15 / 마감반 12:00으로 고정.
    ============================================================ */
@@ -347,6 +347,23 @@ const SCHEDULE_TEMPLATES = {
   ]
 };
 
+/* 일요일엔 운동을 하지 않으므로 'workout' 블록을 '자유시간'으로 바꾸고,
+   그 결과 인접한 free 블록이 생기면 하나로 합쳐 연속된 자유시간 행이 남지 않게 한다. */
+function restDayBlocks(rows){
+  const converted = rows.map(([s,e,label,cat]) => cat==='workout' ? [s,e,'자유시간','free'] : [s,e,label,cat]);
+  const merged = [];
+  converted.forEach(row=>{
+    const prev = merged[merged.length-1];
+    if(prev && prev[3]==='free' && row[3]==='free'){
+      prev[1] = row[1];
+      prev[2] = '자유시간';
+    } else {
+      merged.push(row);
+    }
+  });
+  return merged;
+}
+
 const Schedule = {
   weekIndex(date){
     const a = new Date(SCHEDULE_ANCHOR+'T00:00:00');
@@ -364,7 +381,10 @@ const Schedule = {
     return this.shiftOf(date)==='open' ? ['breakfast','dinner'] : ['breakfast','lunch'];
   },
   templateKey(date){ return `${this.shiftOf(date)}|${this.isOffDay(date)?'off':'work'}`; },
-  blocksFor(date){ return SCHEDULE_TEMPLATES[this.templateKey(date)] || SCHEDULE_TEMPLATES['open|work']; }
+  blocksFor(date){
+    const rows = SCHEDULE_TEMPLATES[this.templateKey(date)] || SCHEDULE_TEMPLATES['open|work'];
+    return dowOf(date)===0 ? restDayBlocks(rows) : rows;
+  }
 };
 
 /* 운동 사진 — img/ex/{파일}-0.jpg(시작) · -1.jpg(끝). 출처는 img/ex/CREDITS.md */
@@ -377,41 +397,6 @@ const EX_IMG = {
   '사이드 레터럴레이즈':'lateral-raise', '리스트 컬':'wrist-curl', '리버스 리스트 컬':'reverse-wrist-curl',
   '데드버그':'dead-bug', '덤벨 해머컬':'hammer-curl', '덤벨 런지':'db-lunge', '힙쓰러스트':'hip-thrust'
 };
-
-/* ============================================================
-   features/workout/recovery-data.js — 일요일 액티브 리커버리 메뉴
-   PLANS의 요일별 split에서 일요일(0) 항목으로 그대로 쓰인다.
-   id를 'rest-'로 시작해 다른 요일 종목 id와 절대 겹치지 않게 한다.
-   ============================================================ */
-/* 마무리 스트레칭 — 매트 + 폼롤러만. 약 8~9분. 헬스장·집 플랜 공통
-   근거: ACSM 정적 스트레칭 10~30초 · 폼롤러 부위당 30~120초(NASM 30~90초) · 허리·관절은 직접 굴리지 않는다 */
-const COOLDOWN = [
-  {id:'fr-tspine', name:'폼롤러 등 위쪽 굴리기', meta:'60초 · 천천히 굴리기', part:'등(흉추)', cue:'롤러를 날개뼈 아래에 두고 팔을 가슴 앞에 교차한 채 엉덩이를 살짝 들어 목 아래부터 갈비뼈 끝까지만 굴린다. 허리는 직접 굴리지 않는다.'},
-  {id:'fr-quad', name:'폼롤러 허벅지 앞 굴리기', meta:'양쪽 각 45초 · 천천히 굴리기', part:'허벅지 앞', cue:'엎드려 팔꿈치로 버티고 골반 아래부터 무릎 위까지 천천히 굴린다. 무릎뼈 위는 굴리지 않는다.'},
-  {id:'st-child-lat', name:'아기 자세 광배·삼두 늘리기', meta:'30초 × 2', part:'등(광배)·삼두', cue:'무릎을 꿇고 팔꿈치를 머리 앞 매트에 댄 채 손을 뒷목 쪽으로 접고, 엉덩이를 뒤꿈치 쪽으로 보내 겨드랑이 아래와 팔 뒤쪽을 함께 늘린다.'},
-  {id:'st-prone-chest', name:'엎드려 가슴 열기', meta:'양쪽 각 30초', part:'가슴·어깨 앞', cue:'엎드려 한 팔을 어깨 높이로 옆으로 뻗고, 반대 손으로 바닥을 밀어 몸을 천천히 돌려 뻗은 팔 쪽 가슴 앞을 늘린다.'},
-  {id:'st-kneel-hip', name:'무릎 꿇고 고관절 앞 늘리기', meta:'양쪽 각 30초', part:'고관절 앞', cue:'한쪽 무릎을 매트에 댄 런지 자세에서 엉덩이를 조인 채 골반을 앞으로 살짝 민다. 무릎이 아프면 매트를 접어 받친다.'},
-  {id:'st-supine-ham', name:'누워서 햄스트링 늘리기', meta:'양쪽 각 30초', part:'햄스트링', cue:'등을 대고 누워 한쪽 다리를 들어 허벅지 뒤를 두 손으로 잡고, 무릎을 살짝 굽힌 채 당긴다. 반대 다리는 바닥에 길게 편다.'}
-];
-
-/* 일요일 액티브 리커버리 — 걷기 20분 뒤 폼롤러 → 매트 스트레칭(상체 → 하체 → 척추), 약 22~25분 */
-const REST_ITEMS = [
-  {id:'rest-walk', name:'빠르게 걷기(산책)', meta:'20분 · 대화 가능한 속도', part:'전신', cue:'대화가 가능한 속도로 팔을 자연스럽게 흔들며 걸어 몸을 데운 뒤 매트로 이어간다.'},
-  {id:'fr-tspine-sun', name:'폼롤러 등 위쪽 굴리기', meta:'60초 · 천천히 굴리기', part:'등(흉추)', cue:'롤러를 날개뼈 아래에 두고 팔을 가슴 앞에 교차한 채 목 아래부터 갈비뼈 끝까지만 굴린다. 허리는 직접 굴리지 않는다.'},
-  {id:'fr-lat-sun', name:'폼롤러 옆구리(광배) 굴리기', meta:'양쪽 각 45초 · 천천히 굴리기', part:'등(광배)', cue:'옆으로 누워 아래쪽 팔을 머리 위로 뻗고, 롤러를 겨드랑이 아래에 둔 채 갈비뼈 중간까지만 짧게 굴린다.'},
-  {id:'fr-quad-sun', name:'폼롤러 허벅지 앞 굴리기', meta:'양쪽 각 60초 · 천천히 굴리기', part:'허벅지 앞', cue:'엎드려 팔꿈치로 버티고 골반 아래부터 무릎 위까지 굴린다. 아픈 지점은 20~30초 멈춰 호흡하고, 무릎뼈 위는 굴리지 않는다.'},
-  {id:'fr-glute-sun', name:'폼롤러 엉덩이 굴리기', meta:'양쪽 각 45초 · 천천히 굴리기', part:'엉덩이', cue:'롤러 위에 앉아 한쪽 발목을 반대 무릎에 올리고, 올린 쪽 엉덩이로 체중을 옮겨 굴린다. 압력은 허리가 아닌 엉덩이에만 둔다.'},
-  {id:'fr-calf-sun', name:'폼롤러 종아리 굴리기', meta:'양쪽 각 45초 · 천천히 굴리기', part:'종아리', cue:'앉아서 롤러를 종아리 아래에 두고 손으로 엉덩이를 들어 발목 위부터 무릎 아래까지 굴린다. 무릎 뒤 오목한 곳은 피한다.'},
-  {id:'st-child-sun', name:'아기 자세 광배 늘리기', meta:'30초 × 3 (정면·왼쪽·오른쪽)', part:'등(광배)', cue:'무릎을 꿇고 엉덩이를 뒤꿈치 쪽으로 보내며 두 팔을 앞으로 멀리 뻗고, 이어서 두 손을 한쪽으로 옮겨 반대 옆구리까지 늘린다.'},
-  {id:'rest-chest', name:'엎드려 가슴 열기', meta:'양쪽 각 30초 × 2세트', part:'가슴·어깨 앞', cue:'엎드려 한 팔을 어깨 높이로 옆으로 뻗고, 반대 손으로 바닥을 밀어 몸을 천천히 돌려 가슴 앞을 늘린다.'},
-  {id:'st-tri-sun', name:'무릎 꿇고 삼두 늘리기', meta:'양팔 각 30초', part:'삼두', cue:'무릎을 꿇고 앉아 한 팔을 머리 뒤로 굽혀 손을 등 위쪽에 두고, 반대 손으로 팔꿈치를 살짝 누른다. 허리가 꺾이지 않게 배에 힘을 준다.'},
-  {id:'st-forearm-sun', name:'네발 자세 이두·전완 늘리기', meta:'30초 × 2', part:'이두·전완', cue:'네발 자세에서 손끝이 무릎 쪽을 향하게 손바닥을 대고, 팔꿈치를 편 채 엉덩이를 뒤로 천천히 보낸다. 손목이 아프면 범위를 줄인다.'},
-  {id:'st-hipflex-sun', name:'무릎 꿇고 고관절 앞 늘리기', meta:'양쪽 각 30초 × 2세트', part:'고관절 앞', cue:'한쪽 무릎을 매트에 댄 런지 자세에서 엉덩이를 조이고 골반을 앞으로 살짝 민다. 무릎이 아프면 매트를 접어 받친다.'},
-  {id:'rest-ham', name:'누워서 햄스트링 늘리기', meta:'양쪽 각 30초 × 2세트', part:'햄스트링', cue:'등을 대고 누워 한쪽 다리를 들어 허벅지 뒤를 두 손으로 잡고, 무릎을 살짝 굽힌 채 당긴다.'},
-  {id:'rest-hip', name:'누워서 4자 엉덩이 늘리기', meta:'양쪽 각 30초 × 2세트', part:'엉덩이·고관절', cue:'누워서 한쪽 발목을 반대 무릎 위에 올려 4자를 만들고, 아래 다리 허벅지 뒤를 잡아 가슴 쪽으로 천천히 당긴다.'},
-  {id:'rest-calf', name:'엎드린 개 자세 종아리 늘리기', meta:'양쪽 각 30초 × 2세트', part:'종아리', cue:'손과 발로 매트를 짚은 ㅅ자 자세에서 한쪽 무릎을 굽히고 반대쪽 뒤꿈치를 바닥 쪽으로 누른다. 어깨가 불편하면 무릎을 더 굽힌다.'},
-  {id:'rest-waist', name:'누워서 허리 비틀기', meta:'양쪽 각 30초', part:'허리·등(흉추)', cue:'누워서 두 무릎을 세운 채 한쪽으로 천천히 넘기고, 어깨는 매트에 붙인 채 반대쪽을 바라본다. 아프지 않은 범위에서만 비튼다.'}
-];
 
 /* ============================================================
    features/meals/data.js
@@ -427,39 +412,41 @@ const MENUS = [
     ],
     tip:'계란 2개면 단백질이 라면 단독 대비 약 12g 늘어난다. 국물은 절반만 마시면 나트륨 부담이 확 줄어든다.' },
 
-  { id:'jjagle-new', name:'대패짜글이', emoji:'🍲', kcal:720, protein:34, cost:3200, min:18,
+  { id:'jjagle-new', name:'대패짜글이', emoji:'🍲', kcal:850, protein:37, cost:5200, min:25,
     tag:'1.5배 조리', batch:true,
-    items:['대패삼겹살 200g','냉동 대파 한 줌','고추장 1큰술','고춧가루 1큰술','간장 1큰술','다진 마늘 1작은술','물 300ml','햇반 1개'],
+    items:['대패삼겹살 200g','양파 1개','감자 2개','냉동 대파 한 줌','식용유 약간','고추장 1큰술','맛술 1큰술','된장 ½큰술','물 400ml','백설 사골 1분링 1알','고춧가루 2큰술','진간장 3큰술','다진마늘 1큰술(수북이)','햇반 1개'],
     steps:[
-      {t:'고기 볶기', d:'달군 냄비에 대패삼겹살을 넣고 겉면이 익을 때까지 볶는다. 기름은 한 큰술만 남기고 따라낸다.', sec:240},
-      {t:'양념 볶기', d:'고추장·고춧가루·간장·다진 마늘을 넣고 30초 더 볶아 양념의 날 맛을 없앤다.', sec:40},
-      {t:'끓이기', d:'물 300ml를 붓고 국물이 자작해질 때까지 중불로 끓인다.', sec:480},
-      {t:'대파·마무리', d:'냉동 대파를 넣고 1분 더 끓인 뒤 절반은 바로 먹고 절반은 통에 담아 식힌다.', sec:60}
+      {t:'채소 썰기', d:'양파는 큼직하게, 감자는 한입 크기로 썬다.', sec:300},
+      {t:'고기 굽기', d:'넓은 냄비에 식용유를 두르고 대패삼겹살을 굽는다.', sec:180},
+      {t:'고추장 볶기', d:'고추장 1큰술을 넣어 살짝 볶아 양념의 날 맛을 없앤다.', sec:30},
+      {t:'채소·된장 볶기', d:'맛술·양파·감자·냉동 대파·된장을 넣고 약불에서 볶는다.', sec:120},
+      {t:'끓이기', d:'물 400ml와 백설 사골 1분링 1알을 넣고 센불로 올린 뒤 고춧가루·진간장·다진마늘을 넣고 뚜껑을 덮어 끓인다. 물이 모자라면 100ml 더 붓는다.', sec:780},
+      {t:'마무리', d:'감자에 젓가락이 쑥 들어가면 불을 끈다. 절반은 바로 먹고 절반은 통에 담아 식힌다.', sec:0}
     ],
-    tip:'항상 1.5~2배로 만든다. 남긴 절반이 다음 끼니가 되므로 요리 횟수가 주 2회 줄어든다.' },
+    tip:'백설 사골 1분링 하나가 쌀뜨물과 소고기 다시다를 대신한다. 끓고 나면 맛을 보고 부족한 간은 더한다.' },
 
-  { id:'jjagle-left', name:'대패짜글이 (남은 것)', emoji:'♻️', kcal:690, protein:33, cost:900, min:6,
+  { id:'jjagle-left', name:'대패짜글이 (남은 것)', emoji:'♻️', kcal:820, protein:36, cost:900, min:6,
     tag:'남은 음식', leftover:true,
     items:['어제 만든 짜글이','햇반 1개','계란 1개(선택)'],
     steps:[
-      {t:'데우기', d:'냄비에 옮겨 담고 물 2~3큰술을 더해 중불로 데운다.', sec:240},
+      {t:'데우기', d:'냄비에 옮겨 담고 물 3~4큰술을 더해 중불로 데운다. 감자 전분 때문에 걸쭉해지므로 2~3큰술보다 조금 더 넣는다.', sec:240},
       {t:'햇반', d:'햇반을 전자레인지에 2분 돌린다.', sec:120},
       {t:'계란 얹기', d:'남은 국물에 계란 1개를 깨 넣고 반숙으로 익힌다.', sec:90}
     ],
     tip:'다시 데울 때 계란 하나만 추가해도 단백질이 6g 늘고 설거지는 그대로다.' },
 
-  { id:'egg-fried-rice', name:'계란볶음밥', emoji:'🍳', kcal:690, protein:24, cost:2300, min:12,
+  { id:'egg-fried-rice', name:'계란볶음밥', emoji:'🍳', kcal:680, protein:18, cost:1800, min:10,
     tag:'한 팬',
-    items:['햇반 1개','계란 3개','냉동 대파 한 줌','식용유 1큰술','간장 ½큰술','굴소스 ½큰술','소금 한 꼬집','후추 약간','참기름 약간'],
+    items:['햇반 1개','계란 2개','냉동 대파 한 줌','식용유 1큰술','버터 1조각(약 10g, 선택)','굴소스 1큰술(없으면 진간장 1큰술이나 소금 약간)','후추 약간'],
     steps:[
-      {t:'햇반 살짝 데우기', d:'햇반 비닐을 조금 뜯고 30초만 데운다. 접시에 넓게 펼쳐 숟가락으로 풀고 김을 날려둔다.', sec:30},
-      {t:'파기름 내기', d:'팬에 식용유 1큰술과 냉동 대파를 넣고 중불에서 볶는다. 물기가 날아가고 파 가장자리가 노릇해지면 된다.', sec:120},
-      {t:'계란 반숙', d:'불을 세게 올리고 파를 한쪽으로 민다. 빈 자리에 계란 3개를 깨 넣고 소금 한 꼬집을 뿌린 뒤 휘저어 반숙으로 익힌다.', sec:40},
-      {t:'밥 볶기', d:'계란이 반쯤 익었을 때 밥을 넣는다. 주걱으로 눌러 풀면서 섞고, 센 불에서 밥알이 톡톡 튈 때까지 볶는다.', sec:150},
-      {t:'간장 태우기', d:'밥을 가운데로 모으고 비어 있는 팬 가장자리에 간장 ½큰술과 굴소스 ½큰술을 붓는다. 5초쯤 지글지글 끓으면 밥과 30초 섞는다.', sec:40},
-      {t:'마무리', d:'불을 끄고 후추를 뿌린 뒤 참기름을 한 바퀴 둘러 가볍게 섞는다.', sec:10}
+      {t:'햇반 데우기', d:'햇반을 1분만 데워 넓은 그릇에 펼치고 숟가락으로 풀어 김을 날린다.', sec:60},
+      {t:'계란 비비기', d:'계란 2개를 밥에 깨 넣고 밥알이 노랗게 덮일 때까지 골고루 비빈다.', sec:60},
+      {t:'파기름 내기', d:'불을 켜기 전 찬 팬에 식용유와 냉동 대파를 넣고 중불로 서서히 데워 파기름을 낸다.', sec:120},
+      {t:'밥 볶기', d:'계란 입힌 밥을 넣고 중불~센불에서 계속 저으며 볶는다. 계란이 익고 밥알이 흩어질 때까지 볶는다.', sec:180},
+      {t:'버터', d:'버터 한 조각을 넣고 녹이며 섞는다. (선택)', sec:30},
+      {t:'간 맞추기', d:'굴소스 1큰술로 간을 맞추고 후추를 뿌린 뒤 불을 끈다.', sec:60}
     ],
-    tip:'햇반은 30초만 데우면 고슬고슬하다. 간장은 밥 위가 아니라 뜨거운 팬 가장자리에 부으면 눌린 간장 향이 난다. 계란 3개로 단백질 약 19g.' },
+    tip:'계란을 밥에 먼저 비벼두면 밥알 하나하나가 코팅돼 고슬고슬해진다. 찬 팬에서부터 데운 대파는 타지 않고 향이 더 잘 올라온다.' },
 
   { id:'chicken-rice', name:'닭가슴살 + 햇반', emoji:'🍗', kcal:520, protein:41, cost:3000, min:7,
     tag:'최소 조리',
@@ -475,66 +462,62 @@ const menuById = id => MENUS.find(m=>m.id===id) || MENUS[0];
 const MEAL_EPOCH = new Date('2026-09-01T00:00:00');
 
 /* ============================================================
-   features/workout/data.js — 헬스일은 항상 월·수·금(Schedule 기준)
+   features/workout/data.js — 헬스장은 월~토, 일요일은 휴식(Schedule 기준)
    ============================================================ */
-const INTENSITY_LABEL = { high:'고강도', moderate:'보통', light:'가벼움' };
-const INTENSITY_COLOR = { high:'var(--work)', moderate:'var(--meal)', light:'var(--ink-2)' };
+const INTENSITY_LABEL = { high:'고강도', moderate:'보통', light:'가벼움', rest:'쉬는 날' };
+const INTENSITY_COLOR = { high:'var(--work)', moderate:'var(--meal)', light:'var(--ink-2)', rest:'var(--ink-3)' };
+
+/* 월·수·금 전신 머신 루틴 — 참고 영상(보통트레이너) 순서·처방을 그대로 따른다.
+   세 요일이 동일한 루틴이라 배열 하나를 세 요일에서 공유한다. */
+const FULL_BODY = [
+  {id:'fb1',name:'레그프레스',meta:'3세트 × 15회 · 휴식 60초',part:'하체',cue:'발은 발판 중앙보다 살짝 위, 골반보다 약간 넓게, 발끝은 11시·1시 방향. 발바닥 전체를 붙이고 무릎은 끝까지 펴지 않으며 발끝 방향을 벗어나지 않게 한다.'},
+  {id:'fb2',name:'랫풀다운',meta:'3세트 × 15회 · 휴식 60초',part:'등',cue:'손잡이는 어깨보다 살짝 넓게 잡고 입 앞으로 당긴다. 귀와 어깨 사이를 넓힌다는 느낌으로, 팔이 아니라 겨드랑이로 당긴다.'},
+  {id:'fb3',name:'시티드로우',meta:'3세트 × 15회 · 휴식 60초',part:'등',cue:'허리를 세우고 팔꿈치를 몸통 뒤로 보내며 당긴다. 견갑골을 뒤로 모았다가 천천히 푼다.'},
+  {id:'fb4',name:'체스트프레스',meta:'3세트 × 15회 · 휴식 60초',part:'가슴',cue:'손잡이가 가슴 중앙선 높이에 오게 의자를 조절하고, 팔은 90%만 펴고 어깨는 등받이에 붙인다. 내릴 때 3초, 밀 때 1초.'},
+  {id:'fb5',name:'숄더프레스',meta:'3세트 × 15회 · 휴식 60초',part:'어깨',cue:'손목과 팔꿈치를 바닥과 수직으로 유지하고 팔꿈치가 뒤로 빠지지 않게 한다. 어깨가 불편하면 좁게 잡고, 허리가 뒤로 젖혀지면 무게가 과한 것이다.'},
+  {id:'fb6',name:'펙덱플라이',meta:'3세트 × 15회 · 휴식 60초',part:'가슴',cue:'팔꿈치를 살짝 굽힌 각도 그대로 고정해 가슴으로만 모은다. 팔이 벌어질 때 가슴이 늘어나는 느낌에 집중한다.'},
+  {id:'fb7',name:'백익스텐션',meta:'3세트 × 10~15회 · 휴식 60초',part:'허리·코어',cue:'몸이 일자가 될 때까지만 올리고 뒤로 꺾지 않는다. 내려갈 때 들이마시고 올라올 때 내쉰다.'},
+  {id:'fb8',name:'크런치',meta:'3세트 × 20회 이상 · 휴식 60초',part:'복부',cue:'수건으로 머리를 받치고 날개뼈만 뗀다. 목이 아니라 배로 올라온다.'}
+];
 
 const PLANS = {
   'gym-7':{
-    id:'gym-7', label:'헬스장 · 매일', dayLabel:'매일 (요일별 강도 다름)',
-    why:'매일 운동하되 강도를 요일별로 다르게 짰다. 가슴·등·하체는 주 1회씩 고강도로, 어깨·하체는 주 중간에 보통 강도로 한 번 더 걸어 회복 시간을 확보했다. 팔(이두·삼두·전완)은 월·화·목·금 네 번 걸리게 배치해 비중을 높였고, 일요일은 무게 없이 걷기+스트레칭만 하는 액티브 리커버리로 뒀다 — 매일 고강도로 밀어붙이면 회복이 못 따라가 오히려 근성장이 막히기 때문이다.',
+    id:'gym-7', label:'헬스장 · 주 6일', dayLabel:'월~토 (일요일 휴식)',
+    why:'월·수·금은 참고 영상의 전신 머신 루틴으로 큰 근육을 주 3번, 48시간씩 쉬며 자극한다. 화·목·토는 팔(이두·삼두·전완)과 코어를 보통 강도로 하고 유산소를 20분 채운다 — 팔 비중은 그대로 둔다. 일요일은 운동 없이 쉬고, 매일 준비운동의 폼롤러가 몸 풀기를 맡는다.',
     warmup:[
-      {id:'w1',name:'러닝머신 걷기',meta:'5분 · 빠르게 걷기, 대화 가능한 강도',cue:'경사 없이, 숨이 살짝 찰 정도의 속도로 걷는다.'},
-      {id:'w2',name:'폼롤러 마사지',meta:'약 5분 · 그날 쓰는 부위 위주로 천천히',cue:'아픈 지점에서는 10초씩 눌러준다는 느낌으로 천천히 굴린다.'}
+      {id:'w1',name:'러닝머신 걷기',meta:'5분 · 빠르게 걷기, 대화 가능한 강도 (속도 5, 더 데우려면 6~6.5)',cue:'경사 없이, 숨이 살짝 찰 정도의 속도로 걷는다.'},
+      {id:'w2',name:'폼롤러 마사지',meta:'약 5분 · 등 위·광배·엉덩이·종아리·허벅지 앞·옆 위주로 10~30회 왕복',cue:'기분 좋을 정도로만 굴리고, 허리와 목은 직접 굴리지 않는다.'}
     ],
-    cardio:[{id:'c1',name:'러닝머신',meta:'10~20분 · 대화 가능한 강도'}],
-    cooldown:COOLDOWN,
+    cardio:[{id:'c1',name:'러닝머신',meta:'10~20분 · 대화 가능한 강도 · 마지막 2~3분은 천천히 걷기로 마무리'}],
     split:{
-      1:{label:'월 · 가슴 + 삼두', intensity:'high', ex:[
-        {id:'m1',name:'체스트프레스',meta:'4세트 × 10회 · 휴식 90초',part:'가슴',cue:'손잡이는 명치 높이. 내릴 때 3초, 밀 때 1초.'},
-        {id:'m2',name:'펙덱플라이',meta:'3세트 × 12회 · 휴식 60초',part:'가슴',cue:'팔꿈치를 살짝 굽힌 각도 그대로 고정해 가슴으로만 모은다.'},
-        {id:'m3',name:'케이블 트라이셉 프레스다운',meta:'4세트 × 12회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸통에 고정하고 아래로만 편다.'},
-        {id:'m4',name:'오버헤드 트라이셉 익스텐션',meta:'3세트 × 10회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 머리 옆에 고정하고 아래로만 접었다 편다.'},
-        {id:'m5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
-      ]},
-      2:{label:'화 · 등 + 이두', intensity:'high', ex:[
-        {id:'m6',name:'랫풀다운',meta:'4세트 × 10회 · 휴식 90초',part:'등',cue:'가슴을 바에 가져간다는 느낌. 팔이 아니라 겨드랑이로 당긴다.'},
-        {id:'m7',name:'시티드로우',meta:'4세트 × 12회 · 휴식 75초',part:'등',cue:'허리를 세우고 견갑골을 뒤로 모았다가 천천히 푼다.'},
-        {id:'m8',name:'덤벨 바이셉컬',meta:'4세트 × 10회 · 휴식 60초',part:'이두',cue:'팔꿈치를 옆구리에 붙여 고정. 반동 금지.'},
-        {id:'m9',name:'프리처컬(이지바)',meta:'3세트 × 10회 · 휴식 60초',part:'이두',cue:'팔꿈치를 패드에 고정하고 반동 없이 접는다.'},
-        {id:'m10',name:'슈퍼맨',meta:'3세트 × 15회 · 휴식 45초',part:'허리·코어',cue:'턱을 당긴 채 팔다리를 2초 들고 버틴다.'}
-      ]},
-      3:{label:'수 · 하체', intensity:'high', ex:[
-        {id:'m11',name:'레그프레스',meta:'4세트 × 12회 · 휴식 90초',part:'하체',cue:'무릎이 발끝 방향을 벗어나지 않게.'},
-        {id:'m12',name:'레그컬',meta:'3세트 × 12회 · 휴식 60초',part:'햄스트링',cue:'허벅지가 패드에서 뜨지 않게 고정한다.'},
-        {id:'m13',name:'레그익스텐션',meta:'3세트 × 12회 · 휴식 60초',part:'허벅지 앞',cue:'끝에서 1초 멈췄다 천천히 내린다.'},
-        {id:'m14',name:'카프레이즈',meta:'3세트 × 20회 · 휴식 45초',part:'종아리',cue:'끝까지 올렸다 완전히 내린다.'},
-        {id:'m15',name:'플랭크',meta:'3세트 × 40초 · 휴식 45초',part:'코어',cue:'엉덩이를 조이고 갈비뼈를 닫는다.'}
-      ]},
-      4:{label:'목 · 어깨 + 전완', intensity:'moderate', ex:[
-        {id:'m16',name:'숄더프레스',meta:'3세트 × 12회 · 휴식 60초',part:'어깨',cue:'허리가 뒤로 젖혀지면 무게가 과하다.'},
-        {id:'m17',name:'사이드 레터럴레이즈',meta:'3세트 × 15회 · 휴식 45초',part:'어깨',cue:'팔꿈치를 살짝 굽힌 채 어깨 높이까지만 든다.'},
-        {id:'m18',name:'리스트 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'무릎에 팔뚝을 올리고 손목만 움직인다.'},
-        {id:'m19',name:'리버스 리스트 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'손등이 위를 보는 그립으로 반대 방향도 채운다.'},
-        {id:'m20',name:'데드버그',meta:'3세트 × 양쪽 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채 팔다리를 반대로 뻗는다.'}
-      ]},
-      5:{label:'금 · 팔 집중', intensity:'high', ex:[
-        {id:'m21',name:'덤벨 바이셉컬',meta:'4세트 × 10회 · 휴식 60초',part:'이두',cue:'반동 없이, 마지막 세트는 실패 지점까지.'},
-        {id:'m22',name:'덤벨 해머컬',meta:'4세트 × 12회 · 휴식 60초',part:'전완 + 이두',cue:'손등이 바깥을 보는 세로 그립.'},
-        {id:'m23',name:'케이블 트라이셉 프레스다운',meta:'4세트 × 12회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸통에 고정.'},
-        {id:'m24',name:'오버헤드 트라이셉 익스텐션',meta:'3세트 × 10회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 머리 옆에 고정.'},
-        {id:'m25',name:'리스트 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'이번 주 팔 자극을 여기서 마무리한다.'}
-      ]},
-      6:{label:'토 · 하체 + 코어', intensity:'moderate', ex:[
-        {id:'m26',name:'레그프레스',meta:'3세트 × 15회 · 휴식 60초',part:'하체',cue:'수요일보다 가볍게, 횟수로 채운다.'},
-        {id:'m27',name:'덤벨 런지',meta:'3세트 × 양쪽 12회 · 휴식 60초',part:'하체',cue:'앞 무릎이 발끝을 넘지 않게.'},
-        {id:'m28',name:'힙쓰러스트',meta:'3세트 × 15회 · 휴식 60초',part:'엉덩이',cue:'끝에서 엉덩이를 꽉 조이고 1초 버틴다.'},
-        {id:'m29',name:'데드버그',meta:'3세트 × 양쪽 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채로 유지한다.'},
-        {id:'m30',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
-      ]},
-      0:{label:'일 · 액티브 리커버리', intensity:'light', ex:REST_ITEMS,
-         warmup:[{id:'rw1',name:'제자리 걷기',meta:'2분'}], cardio:[], cooldown:[]}
+      1:{label:'월 · 전신 머신', intensity:'moderate', ex:FULL_BODY},
+      2:{label:'화 · 팔 + 코어', intensity:'moderate',
+        cardio:[{id:'c2',name:'러닝머신',meta:'20분 · 대화 가능한 강도 · 마지막 2~3분은 천천히 걷기로 마무리'}],
+        ex:[
+          {id:'a2-1',name:'덤벨 바이셉컬',meta:'3세트 × 12회 · 휴식 60초',part:'이두',cue:'팔꿈치를 옆구리에 붙여 고정. 반동 금지.'},
+          {id:'a2-2',name:'케이블 트라이셉 프레스다운',meta:'3세트 × 12회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸통에 고정하고 아래로만 편다.'},
+          {id:'a2-3',name:'리스트 컬',meta:'3세트 × 15회 · 휴식 40초',part:'전완',cue:'무릎에 팔뚝을 올리고 손목만 움직인다.'},
+          {id:'a2-4',name:'플랭크',meta:'3세트 × 40초 · 휴식 45초',part:'코어',cue:'엉덩이를 조이고 갈비뼈를 닫는다.'}
+        ]},
+      3:{label:'수 · 전신 머신', intensity:'moderate', ex:FULL_BODY},
+      4:{label:'목 · 팔 + 코어', intensity:'moderate',
+        cardio:[{id:'c2',name:'러닝머신',meta:'20분 · 대화 가능한 강도 · 마지막 2~3분은 천천히 걷기로 마무리'}],
+        ex:[
+          {id:'a4-1',name:'덤벨 해머컬',meta:'3세트 × 12회 · 휴식 60초',part:'전완 + 이두',cue:'손등이 바깥을 보는 세로 그립.'},
+          {id:'a4-2',name:'오버헤드 트라이셉 익스텐션',meta:'3세트 × 12회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 머리 옆에 고정하고 아래로만 접었다 편다.'},
+          {id:'a4-3',name:'리버스 리스트 컬',meta:'3세트 × 15회 · 휴식 40초',part:'전완',cue:'손등이 위를 보는 그립으로 반대 방향도 채운다.'},
+          {id:'a4-4',name:'데드버그',meta:'3세트 × 양쪽 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채 팔다리를 반대로 뻗는다.'}
+        ]},
+      5:{label:'금 · 전신 머신', intensity:'moderate', ex:FULL_BODY},
+      6:{label:'토 · 팔 + 코어', intensity:'moderate',
+        cardio:[{id:'c2',name:'러닝머신',meta:'20분 · 대화 가능한 강도 · 마지막 2~3분은 천천히 걷기로 마무리'}],
+        ex:[
+          {id:'a6-1',name:'프리처컬(이지바)',meta:'3세트 × 12회 · 휴식 60초',part:'이두',cue:'팔꿈치를 패드에 고정하고 반동 없이 접는다.'},
+          {id:'a6-2',name:'케이블 트라이셉 프레스다운',meta:'3세트 × 12회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸통에 고정하고 아래로만 편다.'},
+          {id:'a6-3',name:'리스트 컬',meta:'3세트 × 15회 · 휴식 40초',part:'전완',cue:'무릎에 팔뚝을 올리고 손목만 움직인다.'},
+          {id:'a6-4',name:'플랭크',meta:'3세트 × 40초 · 휴식 45초',part:'코어',cue:'엉덩이를 조이고 갈비뼈를 닫는다.'}
+        ]},
+      0:{label:'일 · 휴식', intensity:'rest', rest:true, ex:[]}
     }
   }
 };
@@ -640,14 +623,13 @@ const activePlan = () => PLANS['gym-7'];   // 집 플랜은 2026-09-19 삭제 �
 function routineFor(date){
   const p = activePlan();
   const s = p.split[dowOf(date)];
+  if(s.rest) return { title: s.label, intensity:'rest', rest:true, groups:[] };
   const warmup = (s && s.warmup) || p.warmup;
   const cardio = (s && s.cardio !== undefined) ? s.cardio : p.cardio;
-  const cooldown = (s && s.cooldown) || p.cooldown;
   return { title: s.label, intensity: s.intensity, groups:[
     {key:'warmup', label:'준비운동', items:warmup},
     {key:'main',   label:'본운동',   items:s.ex},
-    {key:'cardio', label:'유산소',   items:cardio},
-    {key:'cool',   label:'마무리 스트레칭', items:cooldown}
+    {key:'cardio', label:'유산소',   items:cardio}
   ]};
 }
 function workRec(date){
@@ -696,7 +678,9 @@ const TITLES = {
     return Schedule.shiftOf(TODAY)==='open' ? '점심은 근무 중 해결' : '저녁은 근무 중 해결';
   }],
   work:['운동', () => {
-    const s = Schedule.workoutSlot(TODAY), sh = Schedule.showerSlot(TODAY), r = routineFor(TODAY);
+    const r = routineFor(TODAY);
+    if(r.rest) return '오늘은 쉬는 날';
+    const s = Schedule.workoutSlot(TODAY), sh = Schedule.showerSlot(TODAY);
     return `${s.start}~${s.end} · 샤워 ${sh.start}~${sh.end} · ${r.title} · ${INTENSITY_LABEL[r.intensity]}`;
   }],
   money:['돈', () => `${state.monthKey.replace('-','년 ')}월`]
@@ -752,8 +736,11 @@ function scheduleCard(date){
 }
 function viewHome(){
   const m = todayMealSummary();
-  const pg = workProgress(TODAY), r = routineFor(TODAY);
-  const slot = Schedule.workoutSlot(TODAY), shower = Schedule.showerSlot(TODAY), off = Schedule.isOffDay(TODAY);
+  const r = routineFor(TODAY);
+  const pg = r.rest ? null : workProgress(TODAY);
+  const slot = r.rest ? null : Schedule.workoutSlot(TODAY);
+  const shower = r.rest ? null : Schedule.showerSlot(TODAY);
+  const off = Schedule.isOffDay(TODAY);
   const left = livingLeft();
 
   const mealLine = (slot,label,x)=>`
@@ -791,7 +778,12 @@ function viewHome(){
     </button>
   </section>
 
-  <section class="card">
+  ${r.rest ? `<section class="card">
+    <div class="card-head">
+      <div class="card-label">${ic('dumbbell')} 오늘은 쉬는 날</div>
+    </div>
+    <div class="tiny">운동 없이 쉰다. 내일 몸이 가벼워야 이번 주가 이어진다.</div>
+  </section>` : `<section class="card">
     <div class="card-head">
       <div class="card-label">${ic('dumbbell')} 오늘 운동 · ${esc(r.title)}</div>
       <span class="chip work" style="background:color-mix(in srgb, ${INTENSITY_COLOR[r.intensity]} 14%, var(--card));color:${INTENSITY_COLOR[r.intensity]}">${INTENSITY_LABEL[r.intensity]}</span>
@@ -800,7 +792,7 @@ function viewHome(){
     <div class="bar" style="margin:12px 0 4px"><i style="width:${pg.pct}%"></i></div>
     <div class="tiny">${slot.start}~${slot.end} · 샤워 ${shower.start}~${shower.end} · 전체 ${pg.done}/${pg.total}개${off?' · 오늘은 휴무지만 운동 시간은 그대로':''}</div>
     <button class="btn work full" style="margin-top:12px" data-go="work|today">루틴 시작</button>
-  </section>
+  </section>`}
 
   <section class="card">
     <div class="card-head">
@@ -984,8 +976,18 @@ const painBanner = `<div class="card flat" style="background:var(--warn-bg);colo
   통증이 생기면 그 세트에서 즉시 멈춘다. 관절이 시리거나 찌릿한 느낌이 이틀 이상 가면 운동을 쉬고 정형외과나 전문 트레이너에게 상담받는다.</div>`;
 
 function workToday(){
+  const r = routineFor(TODAY);
+  if(r.rest){
+    return `
+  <section class="card">
+    <div class="card-head">
+      <div class="card-label">${ic('dumbbell')} 오늘은 쉬는 날</div>
+    </div>
+    <div class="tiny">운동 없이 쉰다. 내일 몸이 가벼워야 이번 주가 이어진다.</div>
+  </section>`;
+  }
   const slot = Schedule.workoutSlot(TODAY), shower = Schedule.showerSlot(TODAY), off = Schedule.isOffDay(TODAY);
-  const r = routineFor(TODAY), rec = workRec(TODAY), pg = workProgress(TODAY);
+  const rec = workRec(TODAY), pg = workProgress(TODAY);
   const grp = g => `
     <section class="card">
       <div class="card-head">
@@ -1024,6 +1026,7 @@ function workGuide(){
   <section class="card" style="background:var(--work-bg)">
     <div class="card-label" style="color:var(--work)">왜 이 구성인가</div>
     <div style="font-size:14.5px;margin-top:6px">${esc(p.why)}</div>
+    <div class="tiny" style="margin-top:8px"><a href="https://www.youtube.com/watch?v=v3vNHGFlrjY" target="_blank" rel="noopener" style="color:inherit">${esc("참고: 보통트레이너 — 헬스장 처음? 초보자 '기구 사용법' 완벽가이드 루틴")}</a></div>
   </section>
   ${painBanner}
   ${list.map(s=>`
@@ -1046,8 +1049,8 @@ function workGuide(){
         </button>`).join('')}
     </section>`).join('')}
   <section class="card">
-    <div class="card-label" style="margin-bottom:8px">준비운동 · 마무리 (일요일 제외)</div>
-    ${[...p.warmup,...p.cooldown].map(i=>`<div class="row"><div style="flex:1"><div class="r-name">${esc(i.name)}</div><div class="r-meta">${esc(i.meta)}</div></div></div>`).join('')}
+    <div class="card-label" style="margin-bottom:8px">준비운동 (일요일 제외)</div>
+    ${p.warmup.map(i=>`<div class="row"><div style="flex:1"><div class="r-name">${esc(i.name)}</div><div class="r-meta">${esc(i.meta)}</div></div></div>`).join('')}
   </section>`;
 }
 
@@ -1249,9 +1252,13 @@ function logSheet(){
   const m = todayMealSummary();
   const trackable = m.tracked.filter(s=>s!=='breakfast');
   const nextMeal = trackable.find(s=>!m[s].done) || trackable[trackable.length-1];
+  const r = routineFor(TODAY);
+  const workOpt = r.rest
+    ? `<div class="opt" style="opacity:.6"><span>${ic('dumbbell')} 오늘은 쉬는 날</span><span class="tiny">운동 없음</span></div>`
+    : `<button class="opt" data-quick="work"><span>${ic('dumbbell')} 운동 시작</span><span class="tiny">${r.title}</span></button>`;
   openSheet(`<h3>무엇을 기록할까</h3>
     <button class="opt" data-quick="meal"><span>${ic('utensils')} 식사 완료</span><span class="tiny">${nextMeal==='lunch'?'점심':nextMeal==='dinner'?'저녁':'아침'}</span></button>
-    <button class="opt" data-quick="work"><span>${ic('dumbbell')} 운동 시작</span><span class="tiny">${routineFor(TODAY).title}</span></button>
+    ${workOpt}
     <button class="opt" data-quick="money"><span>${ic('wallet')} 결산 입력</span><span class="tiny">생활비 ${won(livingLeft())}원 남음</span></button>
     <button class="opt" data-quick="review"><span>${ic('review')} 오늘 회고</span><span class="tiny">${LifeReview.isComplete(state.review[TODAY])?'작성함':'네 가지 질문'}</span></button>
     <button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);

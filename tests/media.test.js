@@ -18,11 +18,16 @@ test('EX_IMG 의 모든 운동에 시작·끝 사진 파일이 있다', () => {
   }
 });
 
-test('헬스장 본운동(m1~) 이름이 모두 EX_IMG 에 있다', () => {
-  const plans = html.slice(html.indexOf('const PLANS'), html.indexOf('\n};', html.indexOf('const PLANS')));
-  const names = new Set([...plans.matchAll(/\{id:'m\d+',name:'([^']+)'/g)].map(m => m[1]));
+// 사진이 아직 없는 운동. 사진을 넣으면 여기서 뺀다.
+const NO_PHOTO_YET = ['백익스텐션'];
+
+test('헬스장 본운동 이름이 모두 EX_IMG 에 있다 (사진 없는 목록 제외)', () => {
+  const start = html.indexOf('const FULL_BODY');
+  const plans = html.slice(start, html.indexOf('\n};', html.indexOf('const PLANS')));
+  const names = new Set([...plans.matchAll(/\{id:'(?:fb\d+|a\d-\d+)',name:'([^']+)'/g)].map(m => m[1]));
+  assert.ok(start >= 0 && names.size >= 15, `본운동을 못 찾음 (${names.size}개)`);
   const missing = [...names].filter(n => !(n in map));
-  assert.deepEqual(missing, []);
+  assert.deepEqual(missing, NO_PHOTO_YET);
 });
 
 test('사진 출처 기록이 있다', () => {

@@ -245,3 +245,14 @@ test('원격을 받는 사이 set 한 값은 늦게 도착한 원격이 덮지 �
   await st.flush();
   assert.deepEqual(api.files.get('app/meals/2026-09.json').json, { '2026-09-17': 'old', '2026-09-18': 'new' });
 });
+
+test('받기(get)에서 401 이 나도 error() 가 auth 가 된다 — 보낼 게 없어도 고장이 보이게', async () => {
+  const api = { async getFile() { const e = new Error('401'); e.status = 401; throw e; }, async putFile() {} };
+  const st = S.createStore({ api, storage: memStorage(), device: 'PC', setTimer: () => 0, clearTimer: () => {} });
+  const seen = [];
+  st.subscribe(s => seen.push(s.error));
+  assert.equal(await st.get('living-routine:v1:settings'), null);
+  assert.equal(st.error(), 'auth');
+  assert.equal(st.lastError(), 'HTTP 401');
+  assert.equal(seen.at(-1), 'auth');
+});

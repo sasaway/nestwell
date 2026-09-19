@@ -52,7 +52,12 @@
     async function pull(key) {
       const path = pathForKey(key);
       if (!api || queue[path]) return read(CACHE + key, null);   // 보낼 게 남았으면 로컬이 최신
-      const remote = await api.getFile(path);
+      let remote;
+      try { remote = await api.getFile(path); }
+      catch (e) {
+        if (e.status === 401 || e.status === 403) { err = 'auth'; lastErr = `HTTP ${e.status}`; emit(); }   // 보낼 게 없어도 고장이 보이게
+        throw e;
+      }
       if (queue[path]) return read(CACHE + key, null);   // 받는 사이 로컬이 바뀌었으면 캐시를 덮지 않는다
       if (!remote) return read(CACHE + key, null);
       const before = storage.getItem(CACHE + key);

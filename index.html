@@ -70,7 +70,6 @@ header.top{
 header.top.scrolled{border-color:var(--line)}
 .top-title{font-size:26px;font-weight:800;letter-spacing:-.6px;line-height:1.1;color:var(--primary)}
 .top-sub{font-size:13px;color:var(--ink-2);margin-top:3px}
-.dots{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:20px;color:var(--ink-2);background:var(--card)}
 
 main{flex:1;padding:6px var(--pad) calc(var(--tab-h) + env(safe-area-inset-bottom) + 24px)}
 
@@ -146,7 +145,6 @@ nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
 
 /* 입력 */
 .inp{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px;font-size:15px}
-.inp:focus{outline:2px solid var(--money);outline-offset:-1px;border-color:transparent}
 .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:650}
 
 /* 시트 / 모달 */
@@ -232,7 +230,6 @@ const store = LifeSync.createStore({
 const DB = {
   async get(key){ return store.get(key); },
   async set(key,val){ store.set(key,val); },
-  async del(key){ storage.removeItem('lifesync:cache:'+key); }   // v6 에서 부르는 곳 없음
 };
 const K = {
   settings:'living-routine:v1:settings',
@@ -519,63 +516,6 @@ const PLANS = {
       0:{label:'일 · 액티브 리커버리', intensity:'light', ex:REST_ITEMS,
          warmup:[{id:'rw1',name:'제자리 걷기',meta:'2분'}], cardio:[], cooldown:[]}
     }
-  },
-  'home-7':{
-    id:'home-7', label:'집 · 매일', dayLabel:'매일 (요일별 강도 다름)',
-    why:'기구 없이 매일 운동하되 강도를 나눠서 회복 시간을 만든다. 월(밀기)·화(당기기)·금(팔 집중)에서 팔을 직접 자극하고, 수·토는 하체 위주로 팔을 쉬게 한다. 일요일은 걷기+스트레칭만 하는 액티브 리커버리다 — 맨몸 운동도 매일 고강도로 밀면 손목·팔꿈치 피로가 누적되기 쉬워서다.',
-    warmup:[
-      {id:'w1',name:'제자리 걷기 + 팔 흔들기',meta:'2분'},
-      {id:'w2',name:'어깨·팔꿈치 돌리기',meta:'각 15회'},
-      {id:'w3',name:'무릎 굽혔다 펴기',meta:'15회'}
-    ],
-    cardio:[{id:'hc1',name:'유산소',meta:'제자리 뛰기 또는 계단 10~15분'}],
-    cooldown:COOLDOWN,
-    split:{
-      1:{label:'월 · 밀기 (가슴 + 삼두)', intensity:'high', ex:[
-        {id:'a1',name:'푸시업',meta:'4세트 × 최대반복 · 휴식 75초',part:'가슴+삼두',cue:'몸을 판자처럼. 허리가 꺼지면 무릎을 대고 자세를 지킨다.'},
-        {id:'a2',name:'다이아몬드 푸시업',meta:'3세트 × 8~12회 · 휴식 75초',part:'삼두',cue:'손으로 삼각형을 만들고 팔꿈치를 몸통에 붙여 내린다.'},
-        {id:'a3',name:'의자 딥스',meta:'4세트 × 12회 · 휴식 60초',part:'삼두',cue:'의자 두 개 또는 침대 모서리. 어깨가 아프면 깊이를 줄인다.'},
-        {id:'a4',name:'파이크 푸시업',meta:'3세트 × 8회 · 휴식 60초',part:'어깨',cue:'엉덩이를 높이 들고 정수리를 바닥으로 내린다.'},
-        {id:'a5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
-      ]},
-      2:{label:'화 · 당기기 (등 + 이두)', intensity:'high', ex:[
-        {id:'b1',name:'책상 밑 인버티드 로우',meta:'4세트 × 10회 · 휴식 75초',part:'등+이두',cue:'튼튼한 책상 아래에 누워 가슴을 상판으로 당긴다.'},
-        {id:'b2',name:'백팩 컬',meta:'4세트 × 12회 · 휴식 60초',part:'이두',cue:'책 넣은 가방을 양손으로. 팔꿈치 고정, 내릴 때 3초.'},
-        {id:'b3',name:'수건 아이소메트릭 컬',meta:'3세트 × 20초 × 양팔 · 휴식 45초',part:'이두',cue:'수건을 발로 밟고 위로 당기며 버틴다.'},
-        {id:'b4',name:'슈퍼맨',meta:'3세트 × 15회 · 휴식 45초',part:'허리',cue:'팔다리를 2초 들고 버틴다.'},
-        {id:'b5',name:'플랭크',meta:'3세트 × 40초 · 휴식 45초',part:'코어',cue:'엉덩이를 조이고 갈비뼈를 닫는다.'}
-      ]},
-      3:{label:'수 · 하체', intensity:'high', ex:[
-        {id:'c1',name:'맨몸 스쿼트',meta:'4세트 × 20회 · 휴식 75초',part:'하체',cue:'무릎이 안쪽으로 모이지 않게 벌린다.'},
-        {id:'c2',name:'런지',meta:'3세트 × 양쪽 12회 · 휴식 60초',part:'하체',cue:'앞 무릎이 발끝을 넘지 않게.'},
-        {id:'c3',name:'힙 힌지 (굿모닝)',meta:'3세트 × 15회 · 휴식 60초',part:'엉덩이·햄스트링',cue:'무릎은 살짝만 굽히고 엉덩이를 뒤로 민다.'},
-        {id:'c4',name:'카프레이즈',meta:'3세트 × 25회 · 휴식 45초',part:'종아리',cue:'계단 끝에서 뒤꿈치를 최대한 내렸다 올린다.'},
-        {id:'c5',name:'데드버그',meta:'3세트 × 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채 팔다리를 반대로 뻗는다.'}
-      ]},
-      4:{label:'목 · 어깨 + 전완', intensity:'moderate', ex:[
-        {id:'d1',name:'파이크 푸시업',meta:'3세트 × 8회 · 휴식 60초',part:'어깨',cue:'엉덩이를 높이 들고 정수리를 바닥으로 내린다.'},
-        {id:'d2',name:'백팩 프론트레이즈',meta:'3세트 × 12회 · 휴식 45초',part:'어깨',cue:'책 넣은 가방을 정면으로 어깨 높이까지만 든다.'},
-        {id:'d3',name:'손목 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'무릎에 팔뚝을 올리고 손목만 접었다 편다.'},
-        {id:'d4',name:'백팩 리버스 컬',meta:'3세트 × 12회 · 휴식 45초',part:'전완',cue:'손등이 위를 보는 그립. 전완 바깥쪽을 키운다.'},
-        {id:'d5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
-      ]},
-      5:{label:'금 · 팔 집중', intensity:'high', ex:[
-        {id:'e1',name:'백팩 컬',meta:'4세트 × 12회 · 휴식 60초',part:'이두',cue:'반동 없이. 마지막 세트는 실패 지점까지.'},
-        {id:'e2',name:'해머 스타일 백팩 컬',meta:'4세트 × 12회 · 휴식 60초',part:'전완 + 이두',cue:'손바닥이 마주보는 그립.'},
-        {id:'e3',name:'다이아몬드 푸시업',meta:'3세트 × 10회 · 휴식 60초',part:'삼두',cue:'팔꿈치를 몸에 붙여야 삼두에 실린다.'},
-        {id:'e4',name:'의자 딥스',meta:'3세트 × 12회 · 휴식 60초',part:'삼두',cue:'어깨가 아프면 깊이를 줄인다.'},
-        {id:'e5',name:'손목 컬',meta:'3세트 × 20회 · 휴식 40초',part:'전완',cue:'이번 주 팔 자극을 여기서 마무리한다.'}
-      ]},
-      6:{label:'토 · 하체 + 코어', intensity:'moderate', ex:[
-        {id:'f1',name:'맨몸 스쿼트',meta:'3세트 × 25회 · 휴식 60초',part:'하체',cue:'수요일보다 가볍게, 횟수로 채운다.'},
-        {id:'f2',name:'글루트 브릿지',meta:'3세트 × 15회 · 휴식 45초',part:'엉덩이',cue:'끝에서 엉덩이를 꽉 조이고 1초 버틴다.'},
-        {id:'f3',name:'카프레이즈',meta:'3세트 × 25회 · 휴식 45초',part:'종아리',cue:'끝까지 올렸다 완전히 내린다.'},
-        {id:'f4',name:'데드버그',meta:'3세트 × 10회 · 휴식 45초',part:'코어',cue:'허리를 바닥에 붙인 채로 유지한다.'},
-        {id:'f5',name:'크런치',meta:'3세트 × 20회 · 휴식 45초',part:'복부',cue:'목이 아니라 배로 올라온다.'}
-      ]},
-      0:{label:'일 · 액티브 리커버리', intensity:'light', ex:REST_ITEMS,
-         warmup:[{id:'rw1',name:'제자리 걷기',meta:'2분'}], cardio:[], cooldown:[]}
-    }
   }
 };
 
@@ -600,13 +540,13 @@ const budgetTemplate = () => ([
 const state = {
   tab:'home',
   sub:{ meal:'today', work:'today', money:'budget' },
-  settings:{ env:'gym', activePlan:'gym-7', weight:60 },
+  settings:{ weight:60 },
   monthKey: ymOf(TODAY),
   calMonth: ymOf(TODAY),
   meals:{}, mealCache:{},
   work:{},
   review:{},
-  budget:{ categories: budgetTemplate(), log:[] },
+  budget:{ categories: budgetTemplate() },
   prevBudget:null,
   openRecipe:null
 };
@@ -676,8 +616,7 @@ function todayMealSummary(){
 /* ============================================================
    features/workout/service.js — 매일 운동, 강도는 요일이 결정
    ============================================================ */
-const activePlan = () => PLANS[state.settings.activePlan];
-function isWorkoutDay(){ return true; } // 매일 운동한다 — 요일별로 강도만 다르다
+const activePlan = () => PLANS['gym-7'];   // 집 플랜은 2026-09-19 삭제 — 저장된 설정값과 무관하게 헬스장
 function routineFor(date){
   const p = activePlan();
   const s = p.split[dowOf(date)];
@@ -692,7 +631,7 @@ function routineFor(date){
   ]};
 }
 function workRec(date){
-  if(!state.work[date]) state.work[date] = { plan:state.settings.activePlan, done:{}, rpe:null };
+  if(!state.work[date]) state.work[date] = { plan:'gym-7', done:{}, rpe:null };
   return state.work[date];
 }
 function workProgress(date){

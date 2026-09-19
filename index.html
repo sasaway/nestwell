@@ -287,11 +287,12 @@ const SCHEDULE_TEMPLATES = {
     ['15:30','16:00','귀가 · 휴식','free'],
     ['16:00','18:00','운동 (왕복 포함)','workout'],
     ['18:00','18:30','샤워','care'],
-    ['18:30','19:15','저녁','meal'],
-    ['19:15','19:45','가사','chore'],
-    ['19:45','21:45','취미','hobby'],
-    ['21:45','22:30','자유시간','free'],
-    ['22:30','23:30','스킨케어 · 준비','care'],
+    ['18:30','19:30','저녁','meal'],
+    ['19:30','20:00','가사','chore'],
+    ['20:00','22:00','취미','hobby'],
+    ['22:00','22:30','자유시간','free'],
+    ['22:30','23:15','스킨케어 · 준비','care'],
+    ['23:15','23:30','리뷰','care'],
     ['23:30','24:00','마무리','free']
   ],
   /* 오픈반 · 휴무 (수) — 운동 시각은 근무일과 동일하게 유지 */
@@ -303,10 +304,11 @@ const SCHEDULE_TEMPLATES = {
     ['12:00','16:00','자유시간','free'],
     ['16:00','18:00','운동 (왕복 포함)','workout'],
     ['18:00','18:30','샤워','care'],
-    ['18:30','19:15','저녁','meal'],
-    ['19:15','21:15','취미','hobby'],
-    ['21:15','22:30','자유시간','free'],
-    ['22:30','23:30','스킨케어 · 준비','care'],
+    ['18:30','19:30','저녁','meal'],
+    ['19:30','21:30','취미','hobby'],
+    ['21:30','22:30','자유시간','free'],
+    ['22:30','23:15','스킨케어 · 준비','care'],
+    ['23:15','23:30','리뷰','care'],
     ['23:30','24:00','마무리','free']
   ],
   /* 마감반 · 근무일 (일요일 제외) — 운동 11:00 출발~13:00 귀가(2시간), 샤워 30분, 취미 2시간 */
@@ -317,12 +319,13 @@ const SCHEDULE_TEMPLATES = {
     ['09:35','11:00','자유시간','free'],
     ['11:00','13:00','운동 (왕복 포함)','workout'],
     ['13:00','13:30','샤워','care'],
-    ['13:30','14:10','점심','meal'],
-    ['14:10','14:40','자유시간','free'],
+    ['13:30','14:30','점심','meal'],
+    ['14:30','14:40','자유시간','free'],
     ['15:00','22:00','알바 · 마감반','work'],
     ['22:00','22:30','귀가','free'],
     ['22:30','23:00','가사','chore'],
-    ['23:00','23:30','스킨케어 · 준비','care'],
+    ['23:00','23:15','스킨케어 · 준비','care'],
+    ['23:15','23:30','리뷰','care'],
     ['23:30','24:00','마무리','free']
   ],
   /* 마감반 · 휴무 (일) — 운동 시각은 근무일과 동일하게 유지 */
@@ -333,12 +336,13 @@ const SCHEDULE_TEMPLATES = {
     ['09:35','11:00','자유시간','free'],
     ['11:00','13:00','운동 (왕복 포함)','workout'],
     ['13:00','13:30','샤워','care'],
-    ['13:30','14:10','점심','meal'],
-    ['14:10','18:00','자유시간','free'],
-    ['18:00','18:45','저녁','meal'],
-    ['18:45','19:15','가사','chore'],
-    ['19:15','22:30','자유시간','free'],
-    ['22:30','23:30','스킨케어 · 준비','care'],
+    ['13:30','14:30','점심','meal'],
+    ['14:30','18:00','자유시간','free'],
+    ['18:00','19:00','저녁','meal'],
+    ['19:00','19:30','가사','chore'],
+    ['19:30','22:30','자유시간','free'],
+    ['22:30','23:15','스킨케어 · 준비','care'],
+    ['23:15','23:30','리뷰','care'],
     ['23:30','24:00','마무리','free']
   ]
 };
@@ -469,7 +473,6 @@ const MENUS = [
 ];
 const menuById = id => MENUS.find(m=>m.id===id) || MENUS[0];
 const MEAL_EPOCH = new Date('2026-09-01T00:00:00');
-const BREAKFAST_PROTEIN = 15; // 간단 아침(계란 2개+우유 등) 가정치
 
 /* ============================================================
    features/workout/data.js — 헬스일은 항상 월·수·금(Schedule 기준)
@@ -482,12 +485,10 @@ const PLANS = {
     id:'gym-7', label:'헬스장 · 매일', dayLabel:'매일 (요일별 강도 다름)',
     why:'매일 운동하되 강도를 요일별로 다르게 짰다. 가슴·등·하체는 주 1회씩 고강도로, 어깨·하체는 주 중간에 보통 강도로 한 번 더 걸어 회복 시간을 확보했다. 팔(이두·삼두·전완)은 월·화·목·금 네 번 걸리게 배치해 비중을 높였고, 일요일은 무게 없이 걷기+스트레칭만 하는 액티브 리커버리로 뒀다 — 매일 고강도로 밀어붙이면 회복이 못 따라가 오히려 근성장이 막히기 때문이다.',
     warmup:[
-      {id:'w1',name:'팔 벌려 뛰기',meta:'2분'},
-      {id:'w2',name:'어깨 돌리기',meta:'앞뒤 각 15회'},
-      {id:'w3',name:'빈 몸 스쿼트',meta:'15회'},
-      {id:'w4',name:'손목 돌리기',meta:'양쪽 15회'}
+      {id:'w1',name:'러닝머신 걷기',meta:'5분 · 빠르게 걷기, 대화 가능한 강도',cue:'경사 없이, 숨이 살짝 찰 정도의 속도로 걷는다.'},
+      {id:'w2',name:'폼롤러 마사지',meta:'약 5분 · 그날 쓰는 부위 위주로 천천히',cue:'아픈 지점에서는 10초씩 눌러준다는 느낌으로 천천히 굴린다.'}
     ],
-    cardio:[{id:'c1',name:'유산소',meta:'트레드밀 또는 사이클 10~15분 · 대화 가능한 강도'}],
+    cardio:[{id:'c1',name:'러닝머신',meta:'10~20분 · 대화 가능한 강도'}],
     cooldown:COOLDOWN,
     split:{
       1:{label:'월 · 가슴 + 삼두', intensity:'high', ex:[
@@ -559,7 +560,7 @@ const budgetTemplate = () => ([
 const state = {
   tab:'home',
   sub:{ meal:'today', work:'today', money:'budget' },
-  settings:{ weight:60 },
+  settings:{},
   monthKey: ymOf(TODAY),
   calMonth: ymOf(TODAY),
   meals:{}, mealCache:{},
@@ -873,28 +874,9 @@ function mealToday(){
     </section>`;
   };
 
-  const p = protein();
-  const trackedProtein = (m.tracked.includes('lunch')?m.lunch.menu.protein:0) + (m.tracked.includes('dinner')?m.dinner.menu.protein:0);
-  const total = trackedProtein + BREAKFAST_PROTEIN;
-
   return breakfastCard
     + slotCard('lunch','점심','오픈반 근무 중 해결')
-    + slotCard('dinner','저녁','마감반 근무 중 해결')
-    + `
-    <section class="card">
-      <div class="card-label" style="margin-bottom:10px">오늘 단백질 합계</div>
-      <div class="big sm">${total}<span class="unit">g</span></div>
-      <div class="tiny" style="margin-top:6px">목표 ${p.lo}~${p.hi}g · 아침 간단식은 ${BREAKFAST_PROTEIN}g으로 가정해 더했다.</div>
-      <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-        <span class="muted">체중</span>
-        <input class="inp num" style="width:90px" type="number" inputmode="decimal" value="${state.settings.weight}" data-weight="1">
-        <span class="muted">kg</span>
-      </div>
-    </section>`;
-}
-function protein(){
-  const w = Number(state.settings.weight)||60;
-  return { lo: Math.round(w*1.6), hi: Math.round(w*2.0), w };
+    + slotCard('dinner','저녁','마감반 근무 중 해결');
 }
 function mealCal(){
   const [y,mo] = state.calMonth.split('-').map(Number);
@@ -991,12 +973,12 @@ function startTimer(sec, elId){
    features/workout/view.js
    ============================================================ */
 function viewWork(){
-  const s = state.sub.work;
+  const s = state.sub.work==='log' ? 'today' : state.sub.work;
   const seg = `<div class="seg">
-    ${[['today','오늘 루틴'],['guide','운동 가이드'],['log','기록']]
+    ${[['today','오늘 루틴'],['guide','운동 가이드']]
       .map(([k,l])=>`<button data-sub="work|${k}" aria-current="${s===k}">${l}</button>`).join('')}
   </div>`;
-  return seg + ({today:workToday, guide:workGuide, log:workLog}[s])();
+  return seg + ({today:workToday, guide:workGuide}[s])();
 }
 const painBanner = `<div class="card flat" style="background:var(--warn-bg);color:var(--warn);font-size:13.5px;font-weight:600">
   통증이 생기면 그 세트에서 즉시 멈춘다. 관절이 시리거나 찌릿한 느낌이 이틀 이상 가면 운동을 쉬고 정형외과나 전문 트레이너에게 상담받는다.</div>`;
@@ -1067,43 +1049,6 @@ function workGuide(){
     <div class="card-label" style="margin-bottom:8px">준비운동 · 마무리 (일요일 제외)</div>
     ${[...p.warmup,...p.cooldown].map(i=>`<div class="row"><div style="flex:1"><div class="r-name">${esc(i.name)}</div><div class="r-meta">${esc(i.meta)}</div></div></div>`).join('')}
   </section>`;
-}
-function workLog(){
-  const [y,mo] = state.monthKey.split('-').map(Number);
-  const days = new Date(y,mo,0).getDate();
-  let rows = '';
-  for(let d=days; d>=1; d--){
-    const date = `${y}-${pad2(mo)}-${pad2(d)}`;
-    if(date > TODAY) continue;
-    const rec = state.work[date];
-    const rt = routineFor(date);
-    const pg = (()=>{ const rr=rec||{done:{}}; let t=0,c=0;
-      rt.groups.forEach(g=>g.items.forEach(i=>{t++; if(rr.done[i.id]) c++;})); return {t,c}; })();
-    const done = pg.t>0 && pg.c===pg.t;
-    const shift = Schedule.shiftLabel(Schedule.shiftOf(date));
-    rows += `<div class="row">
-      <div class="tick" style="${done?'background:var(--work);border-color:var(--work);color:var(--on)':''}">${done?ic('check',16):''}</div>
-      <div style="flex:1">
-        <div class="r-name" style="text-decoration:none;color:var(--ink)">${mo}월 ${d}일 ${DOW[dowOf(date)]} · ${esc(rt.title)}</div>
-        <div class="r-meta">${pg.c}/${pg.t} 완료 · ${shift}</div>
-      </div>
-      <select class="inp" style="width:104px;padding:7px 8px" data-rpe="${date}">
-        <option value="">RPE</option>
-        ${[6,7,8,9,10].map(v=>`<option value="${v}" ${rec&&rec.rpe==v?'selected':''}>${v} ${({6:'여유',7:'적당',8:'빡셈',9:'한계',10:'실패'})[v]}</option>`).join('')}
-      </select>
-    </div>`;
-  }
-  const doneCount = Object.keys(state.work).filter(d=>{
-    const r=routineFor(d), rr=state.work[d]; let t=0,c=0;
-    r.groups.forEach(g=>g.items.forEach(i=>{t++; if(rr.done[i.id]) c++;})); return t>0&&c===t;
-  }).length;
-  return `
-  <section class="card">
-    <div class="card-label" style="margin-bottom:8px">이번 달 완주</div>
-    <div class="big">${doneCount}<span class="unit">회</span></div>
-    <div class="tiny" style="margin-top:6px">RPE는 체감 강도다. 같은 무게에서 RPE가 내려가면 무게를 올릴 때다.</div>
-  </section>
-  <section class="card">${rows || '<div class="muted">아직 이번 달 운동일이 없다. 첫 루틴을 시작하면 여기에 쌓인다.</div>'}</section>`;
 }
 
 /* ============================================================
@@ -1247,7 +1192,7 @@ view.addEventListener('click', async e=>{
     const rec = workRec(TODAY), id = n.dataset.check;
     rec.done[id] = !rec.done[id]; saveWork(); return render();
   }
-  if(el('data-finish')){ closeSheet(); return toastSheet('오늘 루틴 완주', '전부 체크했다. 기록 탭에서 체감 강도(RPE)를 남기면 다음 주 무게를 정하기 쉽다.'); }
+  if(el('data-finish')){ closeSheet(); return toastSheet('오늘 루틴 완주', '전부 체크했다. 오늘도 수고했다.'); }
 
   /* 돈 */
   if((n=el('data-fold'))){ const c=catById(n.dataset.fold); c.open=!c.open; saveBudget(); return render(); }
@@ -1275,8 +1220,6 @@ view.addEventListener('change', e=>{
     const [field,cid] = t.dataset.closeAmt.split('|');
     catById(cid)[field] = Number(t.value)||0; saveBudget(); return render();
   }
-  if(t.dataset.rpe){ workRec(t.dataset.rpe).rpe = t.value? Number(t.value):null; saveWork(); return; }
-  if(t.dataset.weight){ state.settings.weight = Number(t.value)||70; saveSettings(); return render(); }
 });
 
 /* ============================================================

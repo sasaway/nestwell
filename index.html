@@ -1475,7 +1475,8 @@ function exSheet(id){
 }
 
 /* 시작 */
-(async ()=>{ await loadAll(); render(); store.flush(); })();   // 켤 때 밀린 기록부터 보낸다
+(async ()=>{ await loadAll(); render(); store.flush(); })();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});   // 사진·화면을 폰에 저장 (sw.js)   // 켤 때 밀린 기록부터 보낸다
 </script>
 </body>
 </html>

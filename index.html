@@ -192,8 +192,8 @@ nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
 </div>
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
-<script src="sync.js"></script>
-<script src="review.js"></script>
+<script src="sync.js?v=390adf21"></script>
+<script src="review.js?v=48d0577c"></script>
 
 <script>
 /* ============================================================
@@ -217,9 +217,10 @@ const ic = (name, size=18) => `<svg class="ico" width="${size}" height="${size}"
    shared/storage.js — localStorage 캐시 + GitHub(sasaway/life) 동기화 (sync.js)
    ============================================================ */
 const SYNC_CFG = 'lifesync:config';
+let storageMode = 'local';   // 'memory' 면 새로고침 때 설정이 사라진다
 const storage = (() => {
   try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return localStorage; }
-  catch (e) { const m = new Map(); return { getItem: k => m.has(k) ? m.get(k) : null, setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; }
+  catch (e) { storageMode = 'memory'; const m = new Map(); return { getItem: k => m.has(k) ? m.get(k) : null, setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; }
 })();
 const syncCfg = (() => { try { return JSON.parse(storage.getItem(SYNC_CFG)); } catch (e) { return null; } })();
 const store = LifeSync.createStore({
@@ -1373,24 +1374,46 @@ $('#syncBadge').addEventListener('click', ()=>syncSheet());
 function syncSheet(){
   const c = syncCfg || { repo:'sasaway/life', device:'' };
   openSheet(`<h3>동기화 설정</h3>
-    <div class="tiny" style="margin-bottom:10px">GitHub 토큰은 이 브라우저에만 저장됩니다.</div>
+    <div class="card flat" style="background:var(--bg);margin-bottom:12px">
+      <div class="tiny">실행 위치 · ${isStandalone()?'홈 화면 앱':'브라우저'}</div>
+      <div class="tiny">저장 공간 · ${storageMode==='local'?'이 기기에 남음':'임시 — 닫으면 사라짐'}</div>
+      <div class="tiny">동기화 설정 · ${syncCfg?`있음 (${esc(syncCfg.device)}, 토큰 …${esc(String(syncCfg.token).slice(-4))})`:'없음'}</div>
+    </div>
+    <div class="tiny" style="margin-bottom:10px">토큰은 이 ${isStandalone()?'홈 화면 앱':'브라우저'}에만 저장돼. 아이폰은 홈 화면 앱과 Safari 가 따로라서 각각 넣어야 해.</div>
     <label class="field" for="syncToken">GitHub 토큰</label>
     <input id="syncToken" class="inp" type="password" placeholder="github_pat_…" autocomplete="off" style="margin-bottom:12px">
     <label class="field" for="syncRepo">저장소</label>
     <input id="syncRepo" class="inp" value="${esc(c.repo)}" style="margin-bottom:12px">
     <label class="field" for="syncDevice">기기 이름</label>
     <input id="syncDevice" class="inp" value="${esc(c.device)}" placeholder="폰" style="margin-bottom:14px">
-    <button class="btn work full" data-sync-save="1">저장하고 다시 열기</button>
+    <div id="syncMsg" class="tiny" role="status" style="color:var(--warn);margin-bottom:8px"></div>
+    <button class="btn work full" data-sync-save="1">확인하고 저장</button>
     ${syncCfg?'<button class="btn ghost full" style="margin-top:8px" data-sync-off="1">동기화 끄기</button>':''}
     <button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);
 }
+function isStandalone(){
+  return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+}
+async function saveSyncConfig(){
+  const msg = t => { const el = $('#syncMsg'); if(el) el.textContent = t; };
+  const token = $('#syncToken').value.trim() || (syncCfg && syncCfg.token);
+  const repo = $('#syncRepo').value.trim(), device = $('#syncDevice').value.trim() || '기기';
+  if(!token) return msg('토큰 칸이 비어 있어. 붙여 넣은 게 들어갔는지 한 번 봐 줘.');
+  if(!repo) return msg('저장소 이름이 비어 있어.');
+  if(storageMode !== 'local') return msg('여기선 설정을 저장할 수 없어. 개인정보 보호 모드인지 확인해 줘.');
+  msg('토큰 확인하는 중…');
+  const r = await LifeSync.checkToken({ token, repo });
+  if(r === 'auth') return msg('토큰이 맞지 않아. 만료됐거나 일부만 붙여 넣었을 수 있어.');
+  if(r === 'notfound') return msg(`토큰 권한에 ${repo} 가 없어. 발급할 때 저장소 선택을 확인해 줘.`);
+  storage.setItem(SYNC_CFG, JSON.stringify({ token, repo, device }));   // network 면 일단 저장하고 나중에 보낸다
+  if(storage.getItem(SYNC_CFG) === null) return msg('저장이 안 됐어. 브라우저 저장 공간 설정을 확인해 줘.');
+  try { if(navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch(e){}
+  location.reload();
+}
 $('#sheet').addEventListener('click', e=>{
   if(e.target.closest('[data-sync-save]')){
-    const token = $('#syncToken').value.trim() || (syncCfg && syncCfg.token);
-    const repo = $('#syncRepo').value.trim(), device = $('#syncDevice').value.trim() || '기기';
-    if(!token || !repo) return;
-    storage.setItem(SYNC_CFG, JSON.stringify({token, repo, device}));
-    return location.reload();
+    saveSyncConfig();
+    return;
   }
   if(e.target.closest('[data-sync-off]')){ storage.removeItem(SYNC_CFG); return location.reload(); }
 });

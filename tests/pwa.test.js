@@ -34,10 +34,16 @@ test('manifest: 시작 주소와 범위가 앱 폴더 안이고 아이콘 파일
   }
 });
 
-test('페이지가 부르는 로컬 스크립트도 상대경로다', () => {
-  for (const [, src] of html.matchAll(/<script src="([^"]+)"/g)) {
-    if (src.startsWith('http')) continue;
-    assert.ok(!src.startsWith('/'), `절대경로 금지: ${src}`);
-    assert.ok(exists(src), `파일 없음: ${src}`);
+const crypto = require('node:crypto');
+const hash = f => crypto.createHash('sha256').update(fs.readFileSync(path.join(root, f))).digest('hex').slice(0, 8);
+
+test('로컬 스크립트는 상대경로이고, 내용 해시(?v=)가 붙어 있어 캐시가 섞이지 않는다', () => {
+  const locals = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]).filter(s => !s.startsWith('http'));
+  assert.ok(locals.length >= 2);
+  for (const src of locals) {
+    const [file, query] = src.split('?');
+    assert.ok(!file.startsWith('/'), `절대경로 금지: ${src}`);
+    assert.ok(exists(file), `파일 없음: ${file}`);
+    assert.equal(query, `v=${hash(file)}`, `${file} 이 바뀌었다 — index.html 의 src 를 ${file}?v=${hash(file)} 로`);
   }
 });

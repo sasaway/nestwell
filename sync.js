@@ -145,7 +145,20 @@
     };
   }
 
-  const LifeSync = { pathForKey, isDateKeyed, diffKeys, mergeDoc, commitMessage, createStore, githubApi };
+  // 설정을 저장하기 전에 토큰이 저장소에 닿는지 한 번 확인한다.
+  async function checkToken({ token, repo, fetchImpl = (...a) => fetch(...a) }) {
+    try {
+      const res = await fetchImpl(`https://api.github.com/repos/${repo}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }, cache: 'no-store',
+      });
+      if (res.status === 200) return 'ok';
+      if (res.status === 401 || res.status === 403) return 'auth';
+      if (res.status === 404) return 'notfound';
+      return 'network';
+    } catch (e) { return 'network'; }
+  }
+
+  const LifeSync = { pathForKey, isDateKeyed, diffKeys, mergeDoc, commitMessage, createStore, githubApi, checkToken };
   if (typeof module !== 'undefined' && module.exports) module.exports = LifeSync;
   else root.LifeSync = LifeSync;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

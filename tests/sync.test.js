@@ -199,3 +199,16 @@ test('githubApi: 실패 상태 코드를 status 로', async () => {
   const gh = S.githubApi({ token: 'T', repo: 'r/r', fetchImpl: async () => ({ ok: false, status: 409, json: async () => ({}) }) });
   await assert.rejects(gh.putFile('app/settings.json', {}, 'x', 'm'), e => e.status === 409);
 });
+
+test('checkToken: 저장소 조회 결과를 ok/auth/notfound/network 로', async () => {
+  const at = status => async (url, init) => {
+    assert.equal(url, 'https://api.github.com/repos/sasaway/life');
+    assert.equal(init.headers.Authorization, 'Bearer T');
+    return { status, ok: status === 200 };
+  };
+  assert.equal(await S.checkToken({ token: 'T', repo: 'sasaway/life', fetchImpl: at(200) }), 'ok');
+  assert.equal(await S.checkToken({ token: 'T', repo: 'sasaway/life', fetchImpl: at(401) }), 'auth');
+  assert.equal(await S.checkToken({ token: 'T', repo: 'sasaway/life', fetchImpl: at(403) }), 'auth');
+  assert.equal(await S.checkToken({ token: 'T', repo: 'sasaway/life', fetchImpl: at(404) }), 'notfound');
+  assert.equal(await S.checkToken({ token: 'T', repo: 'sasaway/life', fetchImpl: async () => { throw new TypeError('offline'); } }), 'network');
+});

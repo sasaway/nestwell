@@ -6,6 +6,12 @@
 <meta name="theme-color" content="#E8EEF5">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <title>Nestwell</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nestwell">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 /* ============================================================
    tokens.css — 색 / 간격 / 글꼴
@@ -429,7 +435,7 @@ const BREAKFAST_PROTEIN = 15; // 간단 아침(계란 2개+우유 등) 가정치
    features/workout/data.js — 헬스일은 항상 월·수·금(Schedule 기준)
    ============================================================ */
 const INTENSITY_LABEL = { high:'고강도', moderate:'보통', light:'가벼움' };
-const INTENSITY_COLOR = { high:'var(--work)', moderate:'var(--meal)', light:'var(--ink-3)' };
+const INTENSITY_COLOR = { high:'var(--work)', moderate:'var(--meal)', light:'var(--ink-2)' };
 
 const PLANS = {
   'gym-7':{
@@ -813,7 +819,7 @@ function viewHome(){
   <section class="card">
     <div class="card-head">
       <div class="card-label">${ic('dumbbell')} 오늘 운동 · ${esc(r.title)}</div>
-      <span class="chip work" style="background:${INTENSITY_COLOR[r.intensity]}22;color:${INTENSITY_COLOR[r.intensity]}">${INTENSITY_LABEL[r.intensity]}</span>
+      <span class="chip work" style="background:color-mix(in srgb, ${INTENSITY_COLOR[r.intensity]} 14%, var(--card));color:${INTENSITY_COLOR[r.intensity]}">${INTENSITY_LABEL[r.intensity]}</span>
     </div>
     <div class="big">${pg.mainDone} <span class="unit">/ ${pg.mainTotal} 완료</span></div>
     <div class="bar" style="margin:12px 0 4px"><i style="width:${pg.pct}%"></i></div>
@@ -1043,7 +1049,7 @@ function workToday(){
   <section class="card">
     <div class="card-head">
       <div class="card-label">${ic('dumbbell')} ${esc(r.title)}</div>
-      <span class="chip work" style="background:${INTENSITY_COLOR[r.intensity]}22;color:${INTENSITY_COLOR[r.intensity]}">${INTENSITY_LABEL[r.intensity]}</span>
+      <span class="chip work" style="background:color-mix(in srgb, ${INTENSITY_COLOR[r.intensity]} 14%, var(--card));color:${INTENSITY_COLOR[r.intensity]}">${INTENSITY_LABEL[r.intensity]}</span>
     </div>
     <div class="tiny" style="margin-bottom:10px">${slot.start}~${slot.end} (이동 포함 2시간) · 샤워 ${shower.start}~${shower.end}${off?' · 오늘은 휴무일, 운동 시각은 그대로':''}</div>
     <div class="big">${pg.done} <span class="unit">/ ${pg.total} 완료</span></div>
@@ -1068,7 +1074,7 @@ function workGuide(){
     <section class="card">
       <div class="card-head">
         <div class="card-label" style="margin-bottom:0">${esc(s.label)}</div>
-        <span class="chip work" style="background:${INTENSITY_COLOR[s.intensity]}22;color:${INTENSITY_COLOR[s.intensity]}">${INTENSITY_LABEL[s.intensity]}</span>
+        <span class="chip work" style="background:color-mix(in srgb, ${INTENSITY_COLOR[s.intensity]} 14%, var(--card));color:${INTENSITY_COLOR[s.intensity]}">${INTENSITY_LABEL[s.intensity]}</span>
       </div>
       ${s.ex.map(it=>`
         <div style="padding:12px 0;border-bottom:1px solid var(--line-soft)">
@@ -1390,7 +1396,11 @@ $('#sheet').addEventListener('click', e=>{
 });
 window.addEventListener('online', ()=>store.flush());
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible'){ store.flush(); loadAll().then(render); }
+  if(document.visibilityState==='visible'){
+    // 홈 화면 앱은 며칠씩 떠 있다 — 날짜가 바뀌었으면 보낼 것을 보내고 오늘로 다시 연다
+    if(ymd(new Date()) !== TODAY){ store.flush().finally(()=>location.reload()); return; }
+    store.flush(); loadAll().then(render);
+  }
   else store.flush();
 });
 

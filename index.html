@@ -112,6 +112,7 @@ nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--tap);padding:12px 16px;border-radius:var(--r-md);font-weight:700;font-size:15px}
 .btn.full{width:100%}
+a.btn{text-decoration:none}
 .btn.meal{background:var(--meal);color:var(--on)}
 .btn.work{background:var(--work);color:var(--on)}
 .btn.money{background:var(--money);color:var(--on)}
@@ -166,6 +167,13 @@ nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
 [data-del]{min-width:var(--tap);min-height:var(--tap)}
 [data-fold]{min-height:var(--tap)}
 .field{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin:0 0 4px}
+/* 운동 사진 */
+.exrow{display:flex;align-items:center;gap:12px;width:100%;min-height:var(--tap);padding:12px 0;border-bottom:1px solid var(--line-soft);text-align:left}
+.exthumb{width:60px;height:40px;flex:none;border-radius:var(--r-sm);object-fit:cover;background:var(--bg)}
+.exframes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.exframes figure{margin:0}
+.exframes img{width:100%;height:auto;aspect-ratio:3/2;border-radius:var(--r-md);border:1px solid var(--accent);background:var(--bg);display:block}
+.exframes figcaption{font-size:13px;color:var(--ink-2);text-align:center;margin-top:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .pop{animation:pop .22s ease}
 @keyframes pop{from{transform:scale(.97);opacity:.4}to{transform:scale(1);opacity:1}}
@@ -353,6 +361,17 @@ const Schedule = {
   },
   templateKey(date){ return `${this.shiftOf(date)}|${this.isOffDay(date)?'off':'work'}`; },
   blocksFor(date){ return SCHEDULE_TEMPLATES[this.templateKey(date)] || SCHEDULE_TEMPLATES['open|work']; }
+};
+
+/* 운동 사진 — img/ex/{파일}-0.jpg(시작) · -1.jpg(끝). 출처는 img/ex/CREDITS.md */
+const EX_IMG = {
+  '체스트프레스':'chest-press', '펙덱플라이':'pec-deck', '케이블 트라이셉 프레스다운':'pushdown',
+  '오버헤드 트라이셉 익스텐션':'overhead-ext', '크런치':'crunch', '랫풀다운':'lat-pulldown',
+  '시티드로우':'seated-row', '덤벨 바이셉컬':'db-curl', '프리처컬(이지바)':'preacher-curl',
+  '슈퍼맨':'superman', '레그프레스':'leg-press', '레그컬':'leg-curl', '레그익스텐션':'leg-ext',
+  '카프레이즈':'calf-raise', '플랭크':'plank', '숄더프레스':'shoulder-press',
+  '사이드 레터럴레이즈':'lateral-raise', '리스트 컬':'wrist-curl', '리버스 리스트 컬':'reverse-wrist-curl',
+  '데드버그':'dead-bug', '덤벨 해머컬':'hammer-curl', '덤벨 런지':'db-lunge', '힙쓰러스트':'hip-thrust'
 };
 
 /* ============================================================
@@ -1032,14 +1051,17 @@ function workGuide(){
         <span class="chip work" style="background:color-mix(in srgb, ${INTENSITY_COLOR[s.intensity]} 14%, var(--card));color:${INTENSITY_COLOR[s.intensity]}">${INTENSITY_LABEL[s.intensity]}</span>
       </div>
       ${s.ex.map(it=>`
-        <div style="padding:12px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="display:flex;justify-content:space-between;gap:8px">
-            <div class="r-name">${esc(it.name)}</div>
-            <span class="chip off">${esc(it.part||'')}</span>
+        <button class="exrow" data-ex="${it.id}" aria-label="${esc(it.name)} 자세 보기">
+          ${EX_IMG[it.name]?`<img class="exthumb" src="img/ex/${EX_IMG[it.name]}-0.jpg" width="60" height="40" loading="lazy" alt="">`:''}
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;gap:8px">
+              <div class="r-name">${esc(it.name)}</div>
+              <span class="chip off">${esc(it.part||'')}</span>
+            </div>
+            <div class="r-meta" style="margin-top:3px">${esc(it.meta)}</div>
+            ${it.cue?`<div class="muted" style="font-size:13.5px;margin-top:6px">${esc(it.cue)}</div>`:''}
           </div>
-          <div class="r-meta" style="margin-top:3px">${esc(it.meta)}</div>
-          ${it.cue?`<div class="muted" style="font-size:13.5px;margin-top:6px">${esc(it.cue)}</div>`:''}
-        </div>`).join('')}
+        </button>`).join('')}
     </section>`).join('')}
   <section class="card">
     <div class="card-label" style="margin-bottom:8px">준비운동 · 마무리 (일요일 제외)</div>
@@ -1203,6 +1225,7 @@ view.addEventListener('click', async e=>{
   let n;
 
   if((n=el('data-go'))){ const [tab,sub]=n.dataset.go.split('|'); return go(tab,sub); }
+  if((n=el('data-ex'))) return exSheet(n.dataset.ex);
   if((n=el('data-sub'))){ const [tab,sub]=n.dataset.sub.split('|'); state.openRecipe=null; return go(tab,sub); }
   if((n=el('data-back'))){ state.openRecipe=null; return render(); }
 
@@ -1425,6 +1448,31 @@ $('#sheet').addEventListener('click', e=>{
 });
 
 document.querySelectorAll('[data-ic]').forEach(el=>{ el.innerHTML = ic(el.dataset.ic, 22); });
+
+/* ============================================================
+   features/workout/detail.js — 운동 자세 시트 (시작·끝 사진 + 설명 + 영상 검색)
+   ============================================================ */
+function findEx(id){
+  for(const s of Object.values(activePlan().split)){ const it = s.ex.find(x=>x.id===id); if(it) return it; }
+  return null;
+}
+function exSheet(id){
+  const it = findEx(id); if(!it) return;
+  const slug = EX_IMG[it.name];
+  const yt = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(it.name + ' 자세');
+  openSheet(`<h3>${esc(it.name)}</h3>
+    ${slug?`<div class="exframes">
+      <figure><img src="img/ex/${slug}-0.jpg" width="400" height="267" alt="${esc(it.name)} 시작 자세"><figcaption>시작</figcaption></figure>
+      <figure><img src="img/ex/${slug}-1.jpg" width="400" height="267" alt="${esc(it.name)} 끝 자세"><figcaption>끝</figcaption></figure>
+    </div>`:''}
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      ${it.part?`<span class="chip off">${esc(it.part)}</span>`:''}<span class="r-meta" style="margin:0">${esc(it.meta)}</span>
+    </div>
+    ${it.cue?`<div style="font-size:15px;margin-bottom:14px">${esc(it.cue)}</div>`:''}
+    <a class="btn line full" href="${yt}" target="_blank" rel="noopener">영상 보기 (유튜브 검색)</a>
+    ${navigator.onLine?'':'<div class="tiny" style="margin-top:6px">지금은 오프라인이라 영상은 연결되면 볼 수 있어.</div>'}
+    <button class="btn ghost full" style="margin-top:8px" data-close="1">닫기</button>`);
+}
 
 /* 시작 */
 (async ()=>{ await loadAll(); render(); store.flush(); })();   // 켤 때 밀린 기록부터 보낸다

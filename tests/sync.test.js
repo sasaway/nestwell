@@ -227,3 +227,21 @@ test('lastError: 마지막 전송 실패 이유를 남기고, 성공하면 지�
   assert.equal(st.lastError(), null);
   assert.equal(st.pending(), 0);
 });
+
+test('원격을 받는 사이 set 한 값은 늦게 도착한 원격이 덮지 않는다', async () => {
+  const api = fakeApi();
+  api.files.set('app/meals/2026-09.json', { json: { '2026-09-17': 'old' }, sha: 's0' });
+  const getFile = api.getFile.bind(api);
+  let release; const gate = new Promise(r => { release = r; });
+  api.getFile = async p => { await gate; return getFile(p); };
+  const storage = memStorage();
+  storage.setItem('lifesync:cache:' + MEALS, JSON.stringify({ '2026-09-17': 'old' }));
+  const st = mk(api, storage);
+  const got = st.get(MEALS);                        // 캐시 반환 + 뒤에서 원격 받기 시작
+  st.set(MEALS, { '2026-09-17': 'old', '2026-09-18': 'new' });
+  release(); await got; await new Promise(r => setTimeout(r, 0));
+  api.getFile = getFile;
+  assert.deepEqual(await st.get(MEALS), { '2026-09-17': 'old', '2026-09-18': 'new' });
+  await st.flush();
+  assert.deepEqual(api.files.get('app/meals/2026-09.json').json, { '2026-09-17': 'old', '2026-09-18': 'new' });
+});

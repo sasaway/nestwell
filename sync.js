@@ -53,6 +53,7 @@
       const path = pathForKey(key);
       if (!api || queue[path]) return read(CACHE + key, null);   // 보낼 게 남았으면 로컬이 최신
       const remote = await api.getFile(path);
+      if (queue[path]) return read(CACHE + key, null);   // 받는 사이 로컬이 바뀌었으면 캐시를 덮지 않는다
       if (!remote) return read(CACHE + key, null);
       const before = storage.getItem(CACHE + key);
       write(CACHE + key, remote.json);

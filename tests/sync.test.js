@@ -212,3 +212,18 @@ test('checkToken: 저장소 조회 결과를 ok/auth/notfound/network 로', asyn
   assert.equal(await S.checkToken({ token: 'T', repo: 'sasaway/life', fetchImpl: at(404) }), 'notfound');
   assert.equal(await S.checkToken({ token: 'T', repo: 'sasaway/life', fetchImpl: async () => { throw new TypeError('offline'); } }), 'network');
 });
+
+test('lastError: 마지막 전송 실패 이유를 남기고, 성공하면 지운다', async () => {
+  const api = fakeApi(); api.failPut = [422];
+  const st = mk(api);
+  st.set(MEALS, { a: 1 });
+  api.failPut = [500];
+  await st.flush();
+  assert.equal(st.lastError(), 'HTTP 500');
+  api.failPut = [0];
+  await st.flush();
+  assert.equal(st.lastError(), '네트워크 오류');
+  await st.flush();
+  assert.equal(st.lastError(), null);
+  assert.equal(st.pending(), 0);
+});

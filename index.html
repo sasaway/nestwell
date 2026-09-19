@@ -192,7 +192,7 @@ nav.tabs button[aria-current="true"] .ic{transform:translateY(-1px)}
 </div>
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
-<script src="sync.js?v=390adf21"></script>
+<script src="sync.js?v=1df51e4e"></script>
 <script src="review.js?v=48d0577c"></script>
 
 <script>
@@ -1370,13 +1370,20 @@ store.subscribe(({pending, error})=>{
   const text = !syncCfg ? '동기화 꺼짐' : error==='auth' ? '토큰 확인' : pending ? `동기화 대기 ${pending}` : '';
   b.textContent = text; b.hidden = !text;
 });
-$('#syncBadge').addEventListener('click', ()=>syncSheet());
+$('#syncBadge').addEventListener('click', async ()=>{
+  if(syncCfg && store.pending() && store.error() !== 'auth'){   // 밀린 게 있으면 먼저 바로 보내 본다
+    await store.flush();
+    if(!store.pending()) return;
+  }
+  syncSheet();
+});
 function syncSheet(){
   const c = syncCfg || { repo:'sasaway/life', device:'' };
   openSheet(`<h3>동기화 설정</h3>
     <div class="card flat" style="background:var(--bg);margin-bottom:12px">
       <div class="tiny">실행 위치 · ${isStandalone()?'홈 화면 앱':'브라우저'}</div>
       <div class="tiny">저장 공간 · ${storageMode==='local'?'이 기기에 남음':'임시 — 닫으면 사라짐'}</div>
+      <div class="tiny">보낼 기록 · ${store.pending()}건${store.lastError()?` — 마지막 실패: ${esc(store.lastError())}`:''}</div>
       <div class="tiny">동기화 설정 · ${syncCfg?`있음 (${esc(syncCfg.device)}, 토큰 …${esc(String(syncCfg.token).slice(-4))})`:'없음'}</div>
     </div>
     <div class="tiny" style="margin-bottom:10px">토큰은 이 ${isStandalone()?'홈 화면 앱':'브라우저'}에만 저장돼. 아이폰은 홈 화면 앱과 Safari 가 따로라서 각각 넣어야 해.</div>
@@ -1466,7 +1473,7 @@ $('#sheet').addEventListener('click', e=>{
 document.querySelectorAll('[data-ic]').forEach(el=>{ el.innerHTML = ic(el.dataset.ic, 22); });
 
 /* 시작 */
-(async ()=>{ await loadAll(); render(); })();
+(async ()=>{ await loadAll(); render(); store.flush(); })();   // 켤 때 밀린 기록부터 보낸다
 </script>
 </body>
 </html>

@@ -44,7 +44,7 @@
     const write = (k, v) => { try { storage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 공간 없음 */ } };
 
     let queue = read(QUEUE, {});          // { path: { key, dirty: [...] } } — 항목은 매번 새 객체
-    let err = null, timer = null, running = null;
+    let err = null, lastErr = null, timer = null, running = null;
     const subs = new Set();
     const emit = () => subs.forEach(fn => fn({ pending: Object.keys(queue).length, error: err }));
     const saveQueue = () => { write(QUEUE, queue); emit(); };
@@ -96,12 +96,17 @@
         }
         return;
       }
+      const e = new Error('충돌 재시도 3번 실패'); e.status = 409; throw e;   // 조용히 멈추지 않게
     }
 
     async function run() {
       for (const [path, entry] of Object.entries(queue)) {
-        try { await sendOne(path, entry); err = null; }
-        catch (e) { err = e.status === 401 || e.status === 403 ? 'auth' : 'network'; break; }
+        try { await sendOne(path, entry); err = null; lastErr = null; }
+        catch (e) {
+          err = e.status === 401 || e.status === 403 ? 'auth' : 'network';
+          lastErr = e.status ? `HTTP ${e.status}` : '네트워크 오류';
+          break;
+        }
       }
       saveQueue();
     }
@@ -116,6 +121,7 @@
       get, set, flush,
       pending: () => Object.keys(queue).length,
       error: () => err,
+      lastError: () => lastErr,
       subscribe(fn) { subs.add(fn); fn({ pending: Object.keys(queue).length, error: err }); return () => subs.delete(fn); },
     };
   }
